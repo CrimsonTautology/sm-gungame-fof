@@ -1,0 +1,11 @@
+#compiled files
+*.smx
+*.exe
+*.o
+karaoke.sp
+
+#vim files
+*.sw*
+
+#Ignore the settings file
+Sourcemodproject.yml
