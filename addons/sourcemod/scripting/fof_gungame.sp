@@ -12,8 +12,18 @@
 //#define DEBUG             true
 
 #if !defined IN_FOF_SWITCH
-    #define IN_FOF_SWITCH   (1<<14)
+#define IN_FOF_SWITCH   (1<<14)
 #endif
+
+#define SOUND_STINGER1  "music/bounty/bounty_objective_stinger1.mp3"
+#define SOUND_STINGER2  "music/bounty/bounty_objective_stinger2.mp3"
+#define SOUND_FIGHT  "vehicles/train/whistle.wav"
+#define SOUND_HUMILIATION  "vehicles/train/whistle.wav"
+#define SOUND_LOSTLEAD  "vehicles/train/whistle.wav"
+#define SOUND_TAKENLEAD  "vehicles/train/whistle.wav"
+#define SOUND_TIEDLEAD  "vehicles/train/whistle.wav"
+
+
 
 new Handle:sm_fof_gg_version = INVALID_HANDLE;
 new Handle:fof_gungame_enabled = INVALID_HANDLE;
@@ -166,19 +176,13 @@ public OnMapStart()
         bInTheLead[i] = false;
     }
     
-    AddFileToDownloadsTable( "sound/q3/fight.wav" );
-    AddFileToDownloadsTable( "sound/q3/humiliation.wav" );
-    AddFileToDownloadsTable( "sound/q3/lostlead.wav" );
-    AddFileToDownloadsTable( "sound/q3/takenlead.wav" );
-    AddFileToDownloadsTable( "sound/q3/tiedlead.wav" );
-    
-    PrecacheSound( "music/bounty/bounty_objective_stinger1.mp3", true );
-    PrecacheSound( "music/bounty/bounty_objective_stinger2.mp3", true );
-    PrecacheSound( "q3/fight.wav", true );
-    PrecacheSound( "q3/humiliation.wav", true );
-    PrecacheSound( "q3/lostlead.wav", true );
-    PrecacheSound( "q3/takenlead.wav", true );
-    PrecacheSound( "q3/tiedlead.wav", true );
+    PrecacheSound( SOUND_STINGER1, true );
+    PrecacheSound( SOUND_STINGER2, true );
+    PrecacheSound( SOUND_FIGHT, true );
+    PrecacheSound( SOUND_HUMILIATION, true );
+    PrecacheSound( SOUND_LOSTLEAD, true );
+    PrecacheSound( SOUND_TAKENLEAD, true );
+    PrecacheSound( SOUND_TIEDLEAD, true );
     
     CreateTimer( 1.0, Timer_UpdateHUD, .flags = TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE );
 }
@@ -351,7 +355,7 @@ public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontB
     if( iWinner > 0 )
     {
         if( 0 < iVictim <= MaxClients && IsClientInGame( iVictim ) )
-            EmitSoundToClient( iVictim, "q3/humiliation.wav", .volume = 0.3 );
+            EmitSoundToClient( iVictim, SOUND_HUMILIATION, .volume = 0.3 );
         return;
     }
     
@@ -364,7 +368,7 @@ public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontB
             
             PrintCenterText( iVictim, "Ungraceful death! You are now level %d of %d.", iPlayerLevel[iVictim], iMaxLevel );
             PrintToChat( iVictim, "%sUngraceful death! You are now level %d of %d.", CHAT_PREFIX, iPlayerLevel[iVictim], iMaxLevel );
-            EmitSoundToClient( iVictim, "music/bounty/bounty_objective_stinger1.mp3" );
+            EmitSoundToClient( iVictim,  SOUND_STINGER1);
         }
         return;
     }
@@ -447,7 +451,7 @@ public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontB
         PrintCenterTextAll( "%N has won the round!", iKiller );
         PrintToChatAll( "%sPlayer \x03%N\x07FFDA00 has won the round in \x03%s", CHAT_PREFIX, iKiller, szTime );
         PrintToServer( "%sPlayer '%N' has won the round in %s", CONSOLE_PREFIX, iKiller, szTime );
-        EmitSoundToAll( "music/bounty/bounty_objective_stinger2.mp3" );
+        EmitSoundToAll(  SOUND_STINGER2);
         
         for( new i = 1; i <= MaxClients; i++ )
         {
@@ -469,7 +473,7 @@ public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontB
         
         PrintCenterTextAll( "%N is on the final weapon!", iKiller );
         PrintToConsoleAll( "%sPlayer '%N' is on the final weapon!", CONSOLE_PREFIX, iKiller );
-        EmitSoundToClient( iKiller, "music/bounty/bounty_objective_stinger1.mp3" );
+        EmitSoundToClient( iKiller,  SOUND_STINGER1);
     }
     else
     {
@@ -477,7 +481,7 @@ public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontB
         
         PrintCenterText( iKiller, "Leveled up! You are now level %d of %d.", iPlayerLevel[iKiller], iMaxLevel );
         PrintToConsole( iKiller, "%sLeveled up! You are now level %d of %d.", CONSOLE_PREFIX, iPlayerLevel[iKiller], iMaxLevel );
-        EmitSoundToClient( iKiller, "music/bounty/bounty_objective_stinger1.mp3" );
+        EmitSoundToClient( iKiller,  SOUND_STINGER1);
     }
     
     if( IsPlayerAlive( iKiller ) )
@@ -685,7 +689,7 @@ public Action:Timer_RespawnPlayers_Fix( Handle:hTimer )
     
     new timeleft;
     if( GetMapTimeLeft( timeleft ) && timeleft > 0 )
-        EmitSoundToAll( "q3/fight.wav", .volume = 0.3 );
+        EmitSoundToAll( SOUND_FIGHT, .volume = 0.3 );
     
     return Plugin_Stop;
 }
@@ -1098,13 +1102,13 @@ stock LeaderCheck( bool:bShowMessage = true )
         {
             if( bInTheLead[i] && ( !bWasInTheLead[i] || iOldLeader == i ) && nLeaders > 1 )
             {
-                EmitSoundToClient( i, "q3/tiedlead.wav", .volume = 0.3 );
+                EmitSoundToClient( i, SOUND_TIEDLEAD, .volume = 0.3 );
                 if( bShowMessage )
                     PrintToConsoleAll( "%s'%N' is also on the lead (level %d)", CONSOLE_PREFIX, i, iPlayerLevel[i] );
             }
             else if( bInTheLead[i] && iOldLeader != iLeader && iLeader == i )
             {
-                EmitSoundToClient( i, "q3/takenlead.wav", .volume = 0.3 );
+                EmitSoundToClient( i, SOUND_TAKENLEAD, .volume = 0.3 );
                 if( bShowMessage )
                 {
                     PrintCenterTextAll( "%N is on the lead", i, iPlayerLevel[i] );
@@ -1112,7 +1116,7 @@ stock LeaderCheck( bool:bShowMessage = true )
                 }
             }
             else if( !bInTheLead[i] && bWasInTheLead[i] )
-                EmitSoundToClient( i, "q3/lostlead.wav", .volume = 0.3 );
+                EmitSoundToClient( i, SOUND_LOSTLEAD, .volume = 0.3 );
         }
     
     return nLeaders;
