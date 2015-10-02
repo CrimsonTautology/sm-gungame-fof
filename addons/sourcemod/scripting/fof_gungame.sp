@@ -39,7 +39,6 @@
 new Handle:g_Cvar_Enabled = INVALID_HANDLE;
 new Handle:fof_gungame_config = INVALID_HANDLE;
 new Handle:g_Cvar_Fists = INVALID_HANDLE;
-new Handle:fof_gungame_equip_delay = INVALID_HANDLE;
 new Handle:fof_gungame_heal = INVALID_HANDLE;
 new Handle:fof_gungame_drunkness = INVALID_HANDLE;
 new Handle:fof_gungame_suicides = INVALID_HANDLE;
@@ -47,7 +46,6 @@ new Handle:fof_gungame_logfile = INVALID_HANDLE;
 new Handle:fof_sv_dm_timer_ends_map = INVALID_HANDLE;
 new Handle:mp_bonusroundtime = INVALID_HANDLE;
 
-new Float:flEquipDelay = 0.0;
 new nHealAmount = 25;
 new Float:flDrunkness = 2.5;
 new bool:bSuicides = false;
@@ -112,7 +110,6 @@ public OnPluginStart()
     HookConVarChange( fof_gungame_config = CreateConVar( "fof_gungame_config", "gungame_weapons.txt", _, FCVAR_PLUGIN ), OnCfgConVarChanged );
 
     HookConVarChange( g_Cvar_Fists = CreateConVar( "fof_gungame_fists", "1", "Allow or disallow fists.", FCVAR_PLUGIN|FCVAR_NOTIFY, true, 0.0, true, 1.0 ), OnConVarChanged );
-    HookConVarChange( fof_gungame_equip_delay = CreateConVar( "fof_gungame_equip_delay", "0.0", "Seconds before giving new equipment.", FCVAR_PLUGIN|FCVAR_NOTIFY, true, 0.0 ), OnConVarChanged );
     HookConVarChange( fof_gungame_heal = CreateConVar( "fof_gungame_heal", "25", "Amount of health to restore on each kill.", FCVAR_PLUGIN|FCVAR_NOTIFY, true, 0.0 ), OnConVarChanged );
     HookConVarChange( fof_gungame_drunkness = CreateConVar( "fof_gungame_drunkness", "6.0", _, FCVAR_PLUGIN|FCVAR_NOTIFY ), OnConVarChanged );
     HookConVarChange( fof_gungame_suicides = CreateConVar( "fof_gungame_suicides", "1", "Set 0 to disallow suicides, level down for it.", FCVAR_PLUGIN|FCVAR_NOTIFY ), OnConVarChanged );
@@ -227,7 +224,6 @@ public OnConfigsExecuted()
 
 stock ScanConVars()
 {
-    flEquipDelay = FloatMax( 0.0, GetConVarFloat( fof_gungame_equip_delay ) );
     nHealAmount = Int32Max( 0, GetConVarInt( fof_gungame_heal ) );
     flDrunkness = GetConVarFloat( fof_gungame_drunkness );
     bSuicides = GetConVarBool( fof_gungame_suicides );
@@ -436,7 +432,7 @@ public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontB
     else if( !IsFakeClient( iKiller ) && !StrEqual( szWeapon, szAllowedWeapon[0] ) && !StrEqual( szWeapon, szAllowedWeapon[1] ) )
         return;
     
-    flLastLevelUP[iKiller] = flCurTime + flEquipDelay;
+    flLastLevelUP[iKiller] = flCurTime;
     iPlayerLevel[iKiller]++;
     if( iPlayerLevel[iKiller] > iMaxLevel )
     {
@@ -752,12 +748,12 @@ public Action:Timer_UpdateEquipment( Handle:hTimer, any:iUserID )
         }
         
         new Handle:hPack1;
-        CreateDataTimer( flEquipDelay + 0.10, Timer_GiveWeapon, hPack1, TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE );
+        CreateDataTimer(0.10, Timer_GiveWeapon, hPack1, TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE );
         WritePackCell( hPack1, iUserID );
         WritePackString( hPack1, szPlayerWeapon[0] );
         
         new Handle:hPack2;
-        CreateDataTimer( flEquipDelay + 0.22, Timer_GiveWeapon, hPack2, TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE );
+        CreateDataTimer(0.22, Timer_GiveWeapon, hPack2, TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE );
         WritePackCell( hPack2, iUserID );
         WritePackString( hPack2, szPlayerWeapon[1] );
     }
