@@ -38,7 +38,7 @@
 
 new Handle:g_Cvar_Enabled = INVALID_HANDLE;
 new Handle:fof_gungame_config = INVALID_HANDLE;
-new Handle:fof_gungame_fists = INVALID_HANDLE;
+new Handle:g_Cvar_Fists = INVALID_HANDLE;
 new Handle:fof_gungame_equip_delay = INVALID_HANDLE;
 new Handle:fof_gungame_heal = INVALID_HANDLE;
 new Handle:fof_gungame_drunkness = INVALID_HANDLE;
@@ -47,7 +47,6 @@ new Handle:fof_gungame_logfile = INVALID_HANDLE;
 new Handle:fof_sv_dm_timer_ends_map = INVALID_HANDLE;
 new Handle:mp_bonusroundtime = INVALID_HANDLE;
 
-new bool:bAllowFists = false;
 new Float:flEquipDelay = 0.0;
 new nHealAmount = 25;
 new Float:flDrunkness = 2.5;
@@ -111,7 +110,8 @@ public OnPluginStart()
         );
 
     HookConVarChange( fof_gungame_config = CreateConVar( "fof_gungame_config", "gungame_weapons.txt", _, FCVAR_PLUGIN ), OnCfgConVarChanged );
-    HookConVarChange( fof_gungame_fists = CreateConVar( "fof_gungame_fists", "1", "Allow or disallow fists.", FCVAR_PLUGIN|FCVAR_NOTIFY, true, 0.0, true, 1.0 ), OnConVarChanged );
+
+    HookConVarChange( g_Cvar_Fists = CreateConVar( "fof_gungame_fists", "1", "Allow or disallow fists.", FCVAR_PLUGIN|FCVAR_NOTIFY, true, 0.0, true, 1.0 ), OnConVarChanged );
     HookConVarChange( fof_gungame_equip_delay = CreateConVar( "fof_gungame_equip_delay", "0.0", "Seconds before giving new equipment.", FCVAR_PLUGIN|FCVAR_NOTIFY, true, 0.0 ), OnConVarChanged );
     HookConVarChange( fof_gungame_heal = CreateConVar( "fof_gungame_heal", "25", "Amount of health to restore on each kill.", FCVAR_PLUGIN|FCVAR_NOTIFY, true, 0.0 ), OnConVarChanged );
     HookConVarChange( fof_gungame_drunkness = CreateConVar( "fof_gungame_drunkness", "6.0", _, FCVAR_PLUGIN|FCVAR_NOTIFY ), OnConVarChanged );
@@ -227,7 +227,6 @@ public OnConfigsExecuted()
 
 stock ScanConVars()
 {
-    bAllowFists = GetConVarBool( fof_gungame_fists );
     flEquipDelay = FloatMax( 0.0, GetConVarFloat( fof_gungame_equip_delay ) );
     nHealAmount = Int32Max( 0, GetConVarInt( fof_gungame_heal ) );
     flDrunkness = GetConVarFloat( fof_gungame_drunkness );
@@ -543,7 +542,7 @@ public Hook_WeaponSwitchPost( iClient, iWeapon )
         IntToString( iPlayerLevel[iClient], szPlayerLevel, sizeof( szPlayerLevel ) );
         
         new String:szAllowedWeapon[2][24], Handle:hAllowedWeapons = CreateArray( 8 );
-        if( bAllowFists )
+        if(AreFistsEnabled())
         {
             PushArrayString( hAllowedWeapons, "weapon_fists" );
         }
@@ -1014,7 +1013,7 @@ stock StripWeapons( iClient )
                         break;
                     }
                 GetEntityClassname( iWeapon, szClassname, sizeof( szClassname ) );
-                if( bAllowFists && StrEqual( szClassname, "weapon_fists" ) )
+                if(AreFistsEnabled() && StrEqual( szClassname, "weapon_fists" ) )
                 {
                     continue;
                 }
@@ -1136,4 +1135,9 @@ stock Float:FloatMax( Float:flValue1, Float:flValue2 )
 bool:IsGungameEnabled()
 {
     return GetConVarBool(g_Cvar_Enabled);
+}
+
+bool:AreFistsEnabled()
+{
+    return GetConVarBool(g_Cvar_Fists);
 }
