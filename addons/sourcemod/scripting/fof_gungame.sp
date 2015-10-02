@@ -1,3 +1,13 @@
+/**
+ * vim: set ts=4 :
+ * =============================================================================
+ * Gun Game FoF
+ * Updated version of Leonardo's Fistful of Frags Gun Game plugin.
+ *
+ * =============================================================================
+ *
+ */
+
 #pragma semicolon 1
 
 #include <sourcemod>
@@ -7,6 +17,8 @@
 #tryinclude <steamworks>
 
 #define PLUGIN_VERSION      "2.0"
+#define PLUGIN_NAME         "[FoF] Gun Game"
+
 #define CHAT_PREFIX         "\x04 GG \x07FFDA00 "
 #define CONSOLE_PREFIX      "- GG: "
 
@@ -24,7 +36,6 @@
 
 
 
-new Handle:sm_fof_gg_version = INVALID_HANDLE;
 new Handle:fof_gungame_enabled = INVALID_HANDLE;
 new Handle:fof_gungame_config = INVALID_HANDLE;
 new Handle:fof_gungame_fists = INVALID_HANDLE;
@@ -71,11 +82,11 @@ new bool:bWasInTheLead[MAXPLAYERS+1];
 
 public Plugin:myinfo =
 {
-    name = "[FoF] Gun Game",
+    name = PLUGIN_NAME,
     author = "Leonardo, Modified by CrimsonTautology",
-    description = "N/A",
+    description = "Gun Game for Fistful of Frags",
     version = PLUGIN_VERSION,
-    url = "http://www.xpenia.org/"
+    url = "https://github.com/CrimsonTautology/sm_gungame_fof"
 };
 
 public APLRes:AskPluginLoad2( Handle:hPlugin, bool:bLateLoad, String:szError[], iErrorLength )
@@ -86,9 +97,7 @@ public APLRes:AskPluginLoad2( Handle:hPlugin, bool:bLateLoad, String:szError[], 
 
 public OnPluginStart()
 {
-    sm_fof_gg_version = CreateConVar( "sm_fof_gg_version", PLUGIN_VERSION, "FoF Gun Game Plugin Version", FCVAR_PLUGIN|FCVAR_NOTIFY|FCVAR_REPLICATED|FCVAR_SPONLY|FCVAR_DONTRECORD );
-    SetConVarString( sm_fof_gg_version, PLUGIN_VERSION );
-    HookConVarChange( sm_fof_gg_version, OnVerConVarChanged );
+    CreateConVar("fof_gungame_version", PLUGIN_VERSION, PLUGIN_NAME, FCVAR_PLUGIN | FCVAR_SPONLY | FCVAR_REPLICATED | FCVAR_NOTIFY | FCVAR_DONTRECORD);
     
     fof_gungame_enabled = CreateConVar( "fof_gungame_enabled", "0", _, FCVAR_PLUGIN|FCVAR_NOTIFY, true, 0.0, true, 1.0 );
     HookConVarChange( fof_gungame_config = CreateConVar( "fof_gungame_config", "gungame_weapons.txt", _, FCVAR_PLUGIN ), OnCfgConVarChanged );
@@ -264,10 +273,6 @@ public OnConVarChanged( Handle:hConVar, const String:szOldValue[], const String:
 
 public OnCfgConVarChanged( Handle:hConVar, const String:szOldValue[], const String:szNewValue[] )
     ReloadConfigFile();
-
-public OnVerConVarChanged( Handle:hConVar, const String:szOldValue[], const String:szNewValue[] )
-    if( strcmp( szNewValue, PLUGIN_VERSION, false ) )
-        SetConVarString( hConVar, PLUGIN_VERSION, true, true );
 
 public Action:Command_RestartRound( iClient, nArgs )
 {
