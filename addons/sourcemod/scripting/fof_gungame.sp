@@ -850,6 +850,7 @@ public Action:Timer_UseWeapon( Handle:hTimer, Handle:hPack )
     return Plugin_Stop;
 }
 
+//TODO this belongs in OnGameFrame
 public Action:Timer_UpdateHUD( Handle:hTimer, any:iUnused )
 {
     new iTopLevel = 0, iClients[MaxClients+1], nClients = 0;
