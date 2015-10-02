@@ -273,36 +273,53 @@ public Action:Command_item_dm_end( client, const String:szCommand[], nArgs )
     return Plugin_Continue;
 }
 
-public Event_PlayerActivate( Handle:hEvent, const String:szEventName[], bool:bDontBroadcast )
+public Event_PlayerActivate(Handle:event, const String:name[], bool:dontBroadcast)
 {
     //TODO when is this called?
-    new client = GetClientOfUserId( GetEventInt( hEvent, "userid" ) );
+    new client = GetClientOfUserId(GetEventInt(event, "userid"));
 }
 
-public Event_PlayerSpawn( Handle:hEvent, const String:szEventName[], bool:bDontBroadcast )
+public Event_PlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast)
 {
-    new iUserID = GetEventInt( hEvent, "userid" );
-    new client = GetClientOfUserId( iUserID );
+    if(!IsGungameEnabled()) return;
 
+    new player = GetEventInt(event, "userid");
+    CreateTimer( 0.0, PlayerSpawnDelay, player, TIMER_FLAG_NO_MAPCHANGE );
 }
 
-public Action:Event_PlayerDeath_Pre( Handle:hEvent, const String:szEventName[], bool:bDontBroadcast )
+public Action:PlayerSpawnDelay(Handle:timer, any:player)
 {
-    new iVictim = GetClientOfUserId( GetEventInt( hEvent, "userid" ) );
+    if(!IsGungameEnabled()) return Plugin_Handled;
+
+    new client = GetClientOfUserId(player);
+
+    if(client <= 0) return Plugin_Handled;
+    if(!IsClientInGame(client)) return Plugin_Handled;
+    if(!IsPlayerAlive(client)) return Plugin_Handled;
+
+    new level = GetClientLevel(client);
+    StripInvalidWeapons(client, g_WeaponLevelList[level], g_WeaponLevelListAlt[level]);
+
+    return Plugin_Handled;
+}
+
+public Action:Event_PlayerDeath_Pre(Handle:event, const String:name[], bool:dontBroadcast )
+{
+    new victim = GetClientOfUserId(GetEventInt( event, "userid"));
     return Plugin_Continue;
 }
 
-public Event_PlayerShoot( Handle:hEvent, const String:szEventName[], bool:bDontBroadcast )
+public Event_PlayerShoot( Handle:event, const String:name[], bool:dontBroadcast )
 {
-    new client = GetClientOfUserId( GetEventInt( hEvent, "userid" ) );
+    new client = GetClientOfUserId(GetEventInt(event, "userid"));
 }
 
-public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontBroadcast )
+public Event_PlayerDeath( Handle:event, const String:name[], bool:dontBroadcast )
 {
-    new iVictim = GetClientOfUserId( GetEventInt( hEvent, "userid" ) );
-    new iKillerUID = GetEventInt( hEvent, "attacker" );
-    new iKiller = GetClientOfUserId( iKillerUID );
-    new iDmgBits = GetClientOfUserId( GetEventInt( hEvent, "damagebits" ) );
+    new iVictim = GetClientOfUserId( GetEventInt(event, "userid"));
+    new iKillerUID = GetEventInt(event, "attacker");
+    new iKiller = GetClientOfUserId( iKillerUID);
+    new iDmgBits = GetClientOfUserId( GetEventInt(event, "damagebits"));
 
 }
 
@@ -493,7 +510,7 @@ bool:AreSuicidesAllowed()
     return GetConVarBool(g_Cvar_Suicides);
 }
 
-GetLevelOfClient(client)
+GetClientLevel(client)
 {
     return g_ClientLevel[client];
 }
@@ -515,17 +532,17 @@ ResetClientLevel(client)
 
 bool:ClientHasWon(client)
 {
-    return GetLevelOfClient == g_MaxLevel;
+    return GetClientLevel(client) == g_MaxLevel;
 }
 
-StripInvalidWeapons(client, const String:target_weapon[], const String:alt_target_weapon)
+StripInvalidWeapons(client, const String:target_weapon[], const String:alt_target_weapon[])
 {
-    decl String:class_name[WEAPON_NAME_SIZE], String:target_weapon2[WEAPON_NAME_SIZE], String:alt_target_weapon2[WEAPON_NAME_SIZE];
+    decl String:class_name[MAX_WEAPON_NAME_SIZE], String:target_weapon2[MAX_WEAPON_NAME_SIZE], String:alt_target_weapon2[MAX_WEAPON_NAME_SIZE];
     new weapon_ent, strip_occured=false, has_target_weapon=false, has_alt_target_weapon=false;
     new offs = FindSendPropInfo("CBasePlayer","m_hMyWeapons");
 
     Format(target_weapon2, sizeof(target_weapon2), "%s2", target_weapon);
-    Format(alt_target_weapon2, sizeof(alt_target_weapon2), "%s2", alt_target_weapon);
+    //Format(alt_target_weapon2, sizeof(alt_target_weapon2), "%s2", alt_target_weapon);
     for(new i = 0; i <= 47; i++)
     {
         weapon_ent = GetEntDataEnt2(client,offs + (i * 4));
@@ -537,16 +554,18 @@ StripInvalidWeapons(client, const String:target_weapon[], const String:alt_targe
             has_target_weapon = true;
         }
 
+        /*
         if(StrEqual(class_name, alt_target_weapon) || StrEqual(class_name, alt_target_weapon2))
         {
             has_alt_target_weapon = true;
         }
+        */
 
         //TODO add case for fists
         if(!(
             StrEqual(class_name, target_weapon) || StrEqual(class_name, target_weapon2) ||
-            StrEqual(class_name, alt_target_weapon) || StrEqual(class_name, alt_target_weapon2) ||
-            (AreFistsEnabled && StrEqual(class_name, "weapon_fists")) //Case for allowing fists
+            //StrEqual(class_name, alt_target_weapon) || StrEqual(class_name, alt_target_weapon2) ||
+            (AreFistsEnabled() && StrEqual(class_name, "weapon_fists")) //Case for allowing fists
             ) )
         {
             strip_occured=true;
