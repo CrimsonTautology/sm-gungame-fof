@@ -19,10 +19,8 @@
 #define PLUGIN_VERSION      "2.0"
 #define PLUGIN_NAME         "[FoF] Gun Game"
 
-#define CHAT_PREFIX         "\x04 GG \x07FFDA00 "
-#define CONSOLE_PREFIX      "- GG: "
-
 #define MAX_WEAPON_LEVELS   128
+#define MAX_WEAPON_NAME_SIZE 32
 
 #if !defined IN_FOF_SWITCH
 #define IN_FOF_SWITCH   (1<<14)
@@ -45,24 +43,15 @@ new Handle:g_Cvar_Heal = INVALID_HANDLE;
 new Handle:g_Cvar_Drunkness = INVALID_HANDLE;
 new Handle:g_Cvar_Suicides = INVALID_HANDLE;
 new Handle:fof_sv_dm_timer_ends_map = INVALID_HANDLE;
-new Handle:mp_bonusroundtime = INVALID_HANDLE;
-
-new Float:flBonusRoundTime = 5.0;
 
 //TODO clean this up; there are way too many globals
-new bool:g_IsLateLoaded = false;
-new bool:g_IsDeathmatch = false;
 new Handle:g_HUD_Leader = INVALID_HANDLE;
 new Handle:g_HUD_Level = INVALID_HANDLE;
-new Handle:g_Weapons = INVALID_HANDLE;
 new iAmmoOffset = -1;
-new iWinner = 0;
-new String:szWinner[MAX_NAME_LENGTH];
-new iLeader = 0;
-new iMaxLevel = 1;
-new fof_teamplay = INVALID_ENT_REFERENCE;
 
-new iPlayerLevel[MAXPLAYERS+1];
+new g_MaxLevel;
+new g_ClientLevel[MAXPLAYERS+1];
+
 new bool:bUpdateEquipment[MAXPLAYERS+1];
 new Float:flLastKill[MAXPLAYERS+1];
 new Float:flLastLevelUP[MAXPLAYERS+1];
@@ -76,8 +65,8 @@ new bool:bInTheLead[MAXPLAYERS+1];
 new bool:bWasInTheLead[MAXPLAYERS+1];
 
 //Weaponlist for each level;  second array is for any secondary weapon
-new String:g_WeaponLevelList[MAX_WEAPON_LEVELS]  = {"weapon_fists_ghost"};
-new String:g_WeaponLevelList2[MAX_WEAPON_LEVELS] = {""};
+new String:g_WeaponLevelList[MAX_WEAPON_LEVELS][MAX_WEAPON_NAME_SIZE];
+new String:g_WeaponLevelListAlt[MAX_WEAPON_LEVELS][MAX_WEAPON_NAME_SIZE];
 
 public Plugin:myinfo =
 {
@@ -147,8 +136,8 @@ public OnPluginStart()
     //HookEvent( "player_death", Event_PlayerDeath_Pre, EventHookMode_Pre );
     HookEvent( "player_death", Event_PlayerDeath );
 
-    RegAdminCmd( "fof_gungame_restart", Command_RestartRound, ADMFLAG_GENERIC );
-    RegAdminCmd( "fof_gungame_reload_cfg", Command_ReloadConfigFile, ADMFLAG_CONFIG );
+    RegAdminCmd( "sm_restartround", Command_RestartRound, ADMFLAG_GENERIC );
+    RegAdminCmd( "sm_reloadgungame", Command_ReloadGungame, ADMFLAG_CONFIG );
 
     AddCommandListener( Command_item_dm_end, "item_dm_end" );
 
@@ -157,20 +146,16 @@ public OnPluginStart()
 
     iAmmoOffset = FindSendPropInfo( "CFoF_Player", "m_iAmmo" );
 
-    g_Weapons = CreateKeyValues( "gungame_weapons" );
-
-    //TODO I don't think checking if late loaded is needed
-    if(g_IsLateLoaded)
+    for( new i = 1; i <= MaxClients; i++ )
     {
-        for( new i = 1; i <= MaxClients; i++ )
-            if( IsClientInGame( i ) )
-            {
-                SDKHook( i, SDKHook_OnTakeDamage, Hook_OnTakeDamage );
-                SDKHook( i, SDKHook_WeaponSwitchPost, Hook_WeaponSwitchPost );
-            }
-
-        RestartTheGame();
+        if( IsClientInGame( i ) )
+        {
+            SDKHook( i, SDKHook_OnTakeDamage, Hook_OnTakeDamage );
+            SDKHook( i, SDKHook_WeaponSwitchPost, Hook_WeaponSwitchPost );
+        }
     }
+
+    RestartTheGame();
 
     HookEntityOutput( "logic_auto", "OnMapSpawn", Output_OnMapSpawn );
 }
@@ -203,31 +188,32 @@ public Output_OnMapSpawn( const String:szOutput[], iCaller, iActivator, Float:fl
 
 public OnConfigsExecuted()
 {
-    SetGameDescription( "Gun Game", true );
-    
+    SetGameDescription("Gun Game", true);
+
     decl String:file[PLATFORM_MAX_PATH];
     GetConVarString(g_Cvar_Config, file, sizeof(file));
-    LoadConfigFile(file, iMaxLevel, g_Weapons);
+    LoadConfigFile(file, g_MaxLevel, g_WeaponLevelList, g_WeaponLevelListAlt);
+
 }
 
-LoadConfigFile(String:file[], &max_level, &Handle:weapons)
+LoadConfigFile(String:file[], &max_level, String:weapon_level_list[][], String:weapon_level_list_alt[][])
 {
     max_level = 1;
-    
+
     new String:path[PLATFORM_MAX_PATH];
     BuildPath(Path_SM, path, sizeof(path), "configs/%s", file);
 
-    if(weapons != INVALID_HANDLE) CloseHandle(weapons);
-    weapons = CreateKeyValues( "gungame_weapons" );
+    new Handle:weapons = CreateKeyValues( "gungame_weapons" );
 
     if(!FileToKeyValues(weapons, path))
     {
         LogError("Could not read Gun Game config file \"%s\"", path);
         SetFailState("Could not read Gun Game config file \"%s\"", path);
+        CloseHandle(weapons);
         return;
     }
 
-    new String:tmp[16], level, String:player_weapon[2][32];
+    new String:tmp[16], level;
 
     KvGotoFirstSubKey(weapons);
 
@@ -243,17 +229,21 @@ LoadConfigFile(String:file[], &max_level, &Handle:weapons)
 
         if(max_level < level) max_level = level;
 
-        //TODO WHY ARE YOU NOT CACHING THIS?
         if(KvGotoFirstSubKey(weapons, false ))
         {
-            KvGetSectionName(weapons, player_weapon[0], sizeof(player_weapon[]));
+            //The way this was stored originally was to have the key be the primary weapon and the value to be the altnerate weapon (if one exists)
+            KvGetSectionName(weapons, weapon_level_list[level], MAX_WEAPON_NAME_SIZE);
             KvGoBack(weapons);
-            KvGetString(weapons, player_weapon[0], player_weapon[1], sizeof(player_weapon[]));
+            KvGetString(weapons, weapon_level_list[level], weapon_level_list_alt[level], MAX_WEAPON_NAME_SIZE);
         }
-        PrintToServer( "%sLevel %d = %s%s%s", CONSOLE_PREFIX, max_level, player_weapon[0], player_weapon[1][0] != '\0' ? ", " : "", player_weapon[1] );
+
+        PrintToServer( "Level %d = %s%s%s", level, weapon_level_list[level], weapon_level_list_alt[level][0] != '\0' ? ", " : "", weapon_level_list_alt[level]);
     }
     while(KvGotoNextKey(weapons));
-    PrintToServer( "%sTop level - %d", CONSOLE_PREFIX, max_level );
+
+    PrintToServer( "Top level - %d", max_level );
+
+    CloseHandle(weapons);
 }
 
 public Action:Command_RestartRound( client, nArgs )
@@ -263,11 +253,14 @@ public Action:Command_RestartRound( client, nArgs )
     return Plugin_Handled;
 }
 
-public Action:Command_ReloadConfigFile( client, nArgs )
+public Action:Command_ReloadGungame( client, nArgs )
 {
     decl String:file[PLATFORM_MAX_PATH];
     GetConVarString(g_Cvar_Config, file, sizeof(file));
-    LoadConfigFile(file, iMaxLevel, g_Weapons);
+    LoadConfigFile(file, g_MaxLevel, g_WeaponLevelList, g_WeaponLevelListAlt);
+
+    //TODO
+    PrintWeaponLevelLists(g_MaxLevel, g_WeaponLevelList, g_WeaponLevelListAlt);
 
     return Plugin_Handled;
 }
@@ -288,7 +281,7 @@ public Event_PlayerSpawn( Handle:hEvent, const String:szEventName[], bool:bDontB
 {
     new iUserID = GetEventInt( hEvent, "userid" );
     new client = GetClientOfUserId( iUserID );
-    
+
 }
 
 public Action:Event_PlayerDeath_Pre( Handle:hEvent, const String:szEventName[], bool:bDontBroadcast )
@@ -308,7 +301,7 @@ public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontB
     new iKillerUID = GetEventInt( hEvent, "attacker" );
     new iKiller = GetClientOfUserId( iKillerUID );
     new iDmgBits = GetClientOfUserId( GetEventInt( hEvent, "damagebits" ) );
-    
+
 }
 
 public Action:Timer_GetDrunk( Handle:hTimer, any:iUserID )
@@ -350,20 +343,20 @@ public Action:Timer_RespawnPlayers( Handle:hTimer )
 
 public Action:Timer_RespawnPlayers_Fix( Handle:hTimer )
 {
-    
+
     return Plugin_Stop;
 }
 
 public Action:Timer_UpdateEquipment( Handle:hTimer, any:iUserID )
 {
     new client = GetClientOfUserId( iUserID );
-    
+
     return Plugin_Stop;
 }
 
 public Action:Timer_GiveWeapon( Handle:hTimer, Handle:hPack )
 {
-    
+
     return Plugin_Stop;
 }
 
@@ -390,12 +383,12 @@ stock _ShowHudText( client, Handle:hHudSynchronizer = INVALID_HANDLE, const Stri
 {
     new String:szBuffer[250];
     VFormat( szBuffer, sizeof( szBuffer ), szFormat, 4 );
-    
+
     if( ShowHudText( client, -1, szBuffer ) < 0 && hHudSynchronizer != INVALID_HANDLE )
     {
         ShowSyncHudText( client, hHudSynchronizer, szBuffer );
     }
-    
+
 }
 
 stock UseWeapon( client, const String:szItem[] )
@@ -444,9 +437,9 @@ stock ExtinguishClient( client )
 stock RestartTheGame()
 {
     CreateTimer( 0.0, Timer_RespawnPlayers, .flags = TIMER_FLAG_NO_MAPCHANGE );
-    
-    PrintCenterTextAll( "GUNGAME HAS BEEN RESTARTED!" );
-    PrintToChatAll( "%sThe game has been restarted!", CHAT_PREFIX );
+
+    PrintCenterTextAll("GUNGAME HAS BEEN RESTARTED!");
+    PrintToChatAll("[GG] The game has been restarted!");
 }
 
 stock AllowMapEnd( bool:bState )
@@ -459,7 +452,7 @@ stock AllowMapEnd( bool:bState )
 
 stock LeaderCheck( bool:bShowMessage = true )
 {
-    
+
     return;
 }
 
@@ -468,7 +461,7 @@ stock bool:SetGameDescription( String:szNewValue[], bool:bOverride = true )
 #if defined _SteamWorks_Included
     if( bOverride )
         return SteamWorks_SetGameDescription( szNewValue );
-    
+
     new String:szOldValue[64];
     GetGameDescription( szOldValue, sizeof( szOldValue ), false );
     if( StrEqual( szOldValue, szNewValue ) )
@@ -496,4 +489,96 @@ bool:AreFistsEnabled()
 bool:AreSuicidesAllowed()
 {
     return GetConVarBool(g_Cvar_Suicides);
+}
+
+GetLevelOfClient(client)
+{
+    return g_ClientLevel[client];
+}
+
+RaiseClientLevel(client)
+{
+    g_ClientLevel[client] += 1;
+}
+
+ResetClientLevel(client)
+{
+    g_ClientLevel[client] = 1;
+}
+
+bool:ClientHasWon(client)
+{
+    return GetLevelOfClient == g_MaxLevel;
+}
+
+StripInvalidWeapons(client, const String:target_weapon[])
+{
+    decl String:class_name[WEAPON_NAME_SIZE], String:target_weapon2[WEAPON_NAME_SIZE];
+    new weapon_ent, strip_occured=false, has_target_weapon=false;
+    new offs = FindSendPropInfo("CBasePlayer","m_hMyWeapons");
+
+    Format(target_weapon2, sizeof(target_weapon2), "%s2", target_weapon);
+    for(new i = 0; i <= 47; i++)
+    {
+        weapon_ent = GetEntDataEnt2(client,offs + (i * 4));
+        if(weapon_ent == -1) continue;
+        GetEdictClassname(weapon_ent, class_name, sizeof(class_name));
+
+        if(StrEqual(class_name, target_weapon) || StrEqual(class_name, target_weapon2))
+        {
+            has_target_weapon = true;
+        }
+
+        //TODO add case for fists
+        if(!(StrEqual(class_name, target_weapon) || StrEqual(class_name, target_weapon2) || StrEqual(class_name, "weapon_fists")) )
+        {
+            strip_occured=true;
+            RemovePlayerItem(client, weapon_ent);
+            RemoveEdict(weapon_ent);
+        }
+    }
+
+    if(strip_occured && !has_target_weapon)
+    {
+        ForceEquipWeapon(client, target_weapon);
+    }
+
+}
+
+ForceEquipWeapon(client, const String:weapon[])
+{
+    new String:tmp[MAX_WEAPON_NAME_SIZE];
+
+    GivePlayerItem(client, weapon);
+
+    Format(tmp, sizeof(tmp), "use %s", weapon);
+    ClientCommand(client, tmp);
+}
+
+PrintWeaponLevelLists(max_level, String:weapon_level_list[][], String:weapon_level_list_alt[][])
+{
+    for(new level = 1; level <= max_level; level++)
+    {
+        PrintToServer( "weapon_level_list[%d]: \"%s\"; weapon_level_list_alt[%d]: \"%s\"",
+                level,
+                weapon_level_list[level],
+                level,
+                weapon_level_list_alt[level]);
+    }
+
+    PrintToServer( "max_level: %d", max_level );
+}
+
+PrintClientLevels()
+{
+    for (new client=1; client <= MaxClients; client++)
+    {
+        if(!IsClientInGame(client) || IsFakeClient(client))
+            continue;
+
+        PrintToServer("%5d %L",
+                GetClientLevel(client),
+                client);
+    }
+
 }
