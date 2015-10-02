@@ -42,11 +42,9 @@ new Handle:g_Cvar_Fists = INVALID_HANDLE;
 new Handle:g_Cvar_Heal = INVALID_HANDLE;
 new Handle:g_Cvar_Drunkness = INVALID_HANDLE;
 new Handle:g_Cvar_Suicides = INVALID_HANDLE;
-new Handle:fof_gungame_logfile = INVALID_HANDLE;
 new Handle:fof_sv_dm_timer_ends_map = INVALID_HANDLE;
 new Handle:mp_bonusroundtime = INVALID_HANDLE;
 
-new String:szLogFile[PLATFORM_MAX_PATH];
 new Float:flBonusRoundTime = 5.0;
 
 new bool:bLateLoaded = false;
@@ -135,7 +133,6 @@ public OnPluginStart()
             "Set 0 to disallow suicides, level down for it.",
             FCVAR_PLUGIN|FCVAR_NOTIFY);
 
-    HookConVarChange( fof_gungame_logfile = CreateConVar( "fof_gungame_logfile", "", _, FCVAR_PLUGIN ), OnConVarChanged );
     fof_sv_dm_timer_ends_map = FindConVar( "fof_sv_dm_timer_ends_map" );
     HookConVarChange( mp_bonusroundtime = FindConVar( "mp_bonusroundtime" ), OnConVarChanged );
     AutoExecConfig();
@@ -246,7 +243,6 @@ public OnConfigsExecuted()
 
 stock ScanConVars()
 {
-    GetConVarString( fof_gungame_logfile, szLogFile, sizeof( szLogFile ) );
     flBonusRoundTime = FloatMax( 0.0, GetConVarFloat( mp_bonusroundtime ) );
 }
 
