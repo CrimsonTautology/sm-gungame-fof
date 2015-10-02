@@ -9,7 +9,6 @@
 #define PLUGIN_VERSION      "1.3-20150529"
 #define CHAT_PREFIX         "\x04 GG \x07FFDA00 "
 #define CONSOLE_PREFIX      "- GG: "
-//#define DEBUG             true
 
 #if !defined IN_FOF_SWITCH
 #define IN_FOF_SWITCH   (1<<14)
@@ -525,15 +524,12 @@ public Action:Hook_OnTakeDamage( iVictim, &iAttacker, &iInflictor, &Float:flDama
 public Hook_WeaponSwitchPost( iClient, iWeapon )
     if( iClient != iWinner && 0 < iClient <= MaxClients && IsClientInGame( iClient ) && IsPlayerAlive( iClient ) )
     {
-        WriteLog( "Hook_WeaponSwitchPost(%d): %L", iClient, iClient );
-        
         new String:szPlayerLevel[16];
         IntToString( iPlayerLevel[iClient], szPlayerLevel, sizeof( szPlayerLevel ) );
         
         new String:szAllowedWeapon[2][24], Handle:hAllowedWeapons = CreateArray( 8 );
         if( bAllowFists )
         {
-            WriteLog( "Hook_WeaponSwitchPost(%d): adding weapon_fists", iClient );
             PushArrayString( hAllowedWeapons, "weapon_fists" );
         }
         if( iWinner <= 0 )
@@ -545,7 +541,6 @@ public Hook_WeaponSwitchPost( iClient, iWeapon )
                 KvGoBack( hWeapons );
                 if( szAllowedWeapon[0][0] != '\0' )
                 {
-                    WriteLog( "Hook_WeaponSwitchPost(%d): adding '%s'", iClient, szAllowedWeapon[0] );
                     PushArrayString( hAllowedWeapons, szAllowedWeapon[0] );
                 }
                 
@@ -553,7 +548,6 @@ public Hook_WeaponSwitchPost( iClient, iWeapon )
                 KvGoBack( hWeapons );
                 if( szAllowedWeapon[1][0] != '\0' )
                 {
-                    WriteLog( "Hook_WeaponSwitchPost(%d): adding '%s'", iClient, szAllowedWeapon[1] );
                     PushArrayString( hAllowedWeapons, szAllowedWeapon[1] );
                 }
             }
@@ -571,7 +565,6 @@ public Hook_WeaponSwitchPost( iClient, iWeapon )
                     szClassname[strlen(szClassname)-1] = '\0';
                 if( StrContains( szClassname, "weapon_" ) != 0 )
                 {
-                    WriteLog( "Hook_WeaponSwitchPost(%d): incorrect weapon '%s' (%s/%d)", iClient, szClassname, w == 0 ? "m_hActiveWeapon" : "m_hActiveWeapon2", iEntWeapon[w] );
                     continue;
                 }
                 
@@ -579,8 +572,6 @@ public Hook_WeaponSwitchPost( iClient, iWeapon )
                     RemoveFromArray( hAllowedWeapons, i );
                 else
                 {
-                    WriteLog( "Hook_WeaponSwitchPost(%d): unacceptable '%s' (%s/%d)", iClient, szClassname, w == 0 ? "m_hActiveWeapon" : "m_hActiveWeapon2", iEntWeapon[w] );
-                    
                     RemovePlayerItem( iClient, iEntWeapon[w] );
                     KillEdict( iEntWeapon[w] );
                     
@@ -589,7 +580,6 @@ public Hook_WeaponSwitchPost( iClient, iWeapon )
             }
         
         CloseHandle( hAllowedWeapons );
-        WriteLog( "Hook_WeaponSwitchPost(%d): end", iClient );
     }
 
 public Action:Timer_RespawnAnnounce( Handle:hTimer, any:iUserID )
@@ -717,7 +707,6 @@ public Action:Timer_UpdateEquipment( Handle:hTimer, any:iUserID )
     
     if( iWinner > 0 && iClient != iWinner )
     {
-        WriteLog( "Timer_GiveWeapon(%d): Updating the loadout. Level #%d, fists only (looser).", iClient, iPlayerLevel[iClient] );
     }
     else
     {
@@ -744,7 +733,6 @@ public Action:Timer_UpdateEquipment( Handle:hTimer, any:iUserID )
             if( iClient != iWinner )
             {
                 LogError( "Missing weapon for level %d!", iPlayerLevel[iClient] );
-                WriteLog( "Timer_GiveWeapon(%d): Updating the loadout. Level #%d, fists only (missing loadout).", iClient, iPlayerLevel[iClient] );
             }
             return Plugin_Stop;
         }
@@ -758,8 +746,6 @@ public Action:Timer_UpdateEquipment( Handle:hTimer, any:iUserID )
         CreateDataTimer( flEquipDelay + 0.22, Timer_GiveWeapon, hPack2, TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE );
         WritePackCell( hPack2, iUserID );
         WritePackString( hPack2, szPlayerWeapon[1] );
-        
-        WriteLog( "Timer_GiveWeapon(%d): Updating the loadout. Level #%d, weapon1: '%s', weapon2: '%s'%s.", iClient, iPlayerLevel[iClient], szPlayerWeapon[0], szPlayerWeapon[1], iClient == iWinner ? " (winner)" : "" );
     }
     
     return Plugin_Stop;
@@ -779,13 +765,9 @@ public Action:Timer_GiveWeapon( Handle:hTimer, Handle:hPack )
     if( szWeapon[0] == '\0' )
         return Plugin_Stop;
     
-    WriteLog( "Timer_GiveWeapon(%d): %L", iClient, iClient );
-    
     new iWeapon;
     if( ( iWeapon = GivePlayerItem( iClient, szWeapon ) ) > MaxClients )
     {
-        WriteLog( "Timer_GiveWeapon(%d): generated %s/%d", iClient, szWeapon, iWeapon );
-        
         if( StrContains( szWeapon, "weapon_dynamite" ) == 0 )
             SetAmmo( iClient, iWeapon, 100 );
         else if( StrEqual( szWeapon, "weapon_knife" ) )
@@ -800,11 +782,9 @@ public Action:Timer_GiveWeapon( Handle:hTimer, Handle:hPack )
     }
     else
     {
-        WriteLog( "Timer_GiveWeapon(%d): failed to generate '%s'", iClient, szWeapon );
         LogError( "Failed to generate %s", szWeapon );
     }
     
-    WriteLog( "Timer_GiveWeapon(%d): end", iClient );
     return Plugin_Stop;
 }
 
@@ -919,24 +899,19 @@ public Action:Timer_Announce( Handle:hTimer, any:iUserID )
 stock _ShowHudText( iClient, Handle:hHudSynchronizer = INVALID_HANDLE, const String:szFormat[], any:... )
     if( 0 < iClient <= MaxClients && IsClientInGame( iClient ) )
     {
-        //WriteLog( "_ShowHudText(%d): %L", iClient, iClient );
-        
         new String:szBuffer[250];
         VFormat( szBuffer, sizeof( szBuffer ), szFormat, 4 );
         
         if( ShowHudText( iClient, -1, szBuffer ) < 0 && hHudSynchronizer != INVALID_HANDLE )
         {
-            //WriteLog( "_ShowHudText(%d): ShowSyncHudText( %d, %08X, '%s' )", iClient, iClient, hHudSynchronizer, szBuffer );
             ShowSyncHudText( iClient, hHudSynchronizer, szBuffer );
         }
         
-        //WriteLog( "_ShowHudText(%d): end", iClient );
     }
 
 stock UseWeapon( iClient, const String:szItem[] )
     if( 0 < iClient <= MaxClients && IsClientInGame( iClient ) )
     {
-        WriteLog( "UseWeapon(%d): %L", iClient, iClient );
         if( IsPlayerAlive( iClient ) )
         {
             new Float:flCurTime = GetGameTime();
@@ -958,17 +933,11 @@ stock UseWeapon( iClient, const String:szItem[] )
                     }
                 if( bFound )
                 {
-                    WriteLog( "UseWeapon(%d): use %s", iClient, szItem );
                     FakeClientCommandEx( iClient, "use %s", szItem );
                     flLastUse[iClient] = flCurTime;
                 }
             }
-            else
-                WriteLog( "UseWeapon(%d): %f < 0.1 (item:%s)", iClient, ( flCurTime - flLastUse[iClient] ), szItem );
         }
-        else
-            WriteLog( "UseWeapon(%d): client is dead (item:%s)", iClient, szItem );
-        WriteLog( "UseWeapon(%d): end", iClient );
     }
 
 stock SetAmmo( iClient, iWeapon, iAmmo )
@@ -1004,14 +973,12 @@ public Action:Timer_SetAmmo( Handle:hTimer, Handle:hPack )
 stock KillEdict( iEdict )
     if( iEdict > MaxClients && IsValidEdict( iEdict ) )
     {
-        WriteLog( "KillEdict: AcceptEntityInput( %d, \"Kill\" )", iEdict );
         AcceptEntityInput( iEdict, "Kill" );
     }
 
 stock StripWeapons( iClient )
     if( 0 < iClient <= MaxClients && IsClientInGame( iClient ) && IsPlayerAlive( iClient ) )
     {
-        WriteLog( "StripWeapons(%d): %L", iClient, iClient );
         for( new iWeapon, bool:bFound, iWeapons[48], String:szClassname[32], s = 0; s < 48; s++ )
         {
             bFound = false;
@@ -1022,7 +989,6 @@ stock StripWeapons( iClient )
                     if( iWeapons[w] == iWeapon )
                     {
                         bFound = true;
-                        WriteLog( "StripWeapons(%d): found duplicate '%s' (slot:%d,entity:%d)", iClient, szClassname, s, iWeapon );
                     }
                 if( bFound )
                     continue;
@@ -1035,32 +1001,26 @@ stock StripWeapons( iClient )
                 GetEntityClassname( iWeapon, szClassname, sizeof( szClassname ) );
                 if( bAllowFists && StrEqual( szClassname, "weapon_fists" ) )
                 {
-                    WriteLog( "StripWeapons(%d): skipping '%s' (slot:%d,entity:%d)", iClient, szClassname, s, iWeapon );
                     continue;
                 }
                 else
                 {
-                    WriteLog( "StripWeapons(%d): removing '%s' (slot:%d,entity:%d)", iClient, szClassname, s, iWeapon );
                     RemovePlayerItem( iClient, iWeapon );
                     SetEntPropEnt( iClient, Prop_Send, "m_hMyWeapons", INVALID_ENT_REFERENCE, s );
                     KillEdict( iWeapon );
                 }
             }
         }
-        WriteLog( "StripWeapons(%d): end", iClient );
     }
 
 stock ExtinguishClient( iClient )
     if( 0 < iClient <= MaxClients && IsClientInGame( iClient ) )
     {
-        WriteLog( "ExtinguishClient(%d): %L", iClient, iClient );
         new iEntity = GetEntPropEnt( iClient, Prop_Data, "m_hEffectEntity" );
         if( iEntity > 0 && IsValidEdict( iEntity ) )
         {
-            WriteLog( "ExtinguishClient(%d): m_flLifetime = 0.0 (entity:%d)", iClient, iEntity );
             SetEntPropFloat( iEntity, Prop_Data, "m_flLifetime", 0.0 ); 
         }
-        WriteLog( "ExtinguishClient(%d): end", iClient );
     }
 
 stock RestartTheGame()
@@ -1139,17 +1099,6 @@ stock bool:SetGameDescription( String:szNewValue[], bool:bOverride = true )
     return false;
 }
 
-stock WriteLog( const String:szFormat[], any:... )
-{
-#if defined DEBUG
-    if( szLogFile[0] != '\0' && szFormat[0] != '\0' )
-    {
-        decl String:szBuffer[2048];
-        VFormat( szBuffer, sizeof( szBuffer ), szFormat, 2 );
-        LogToFileEx( szLogFile, "[%.3f] %s", GetGameTime(), szBuffer );
-    }
-#endif
-}
 
 stock PrintToConsoleAll( const String:szFormat[], any:... )
     if( szFormat[0] != '\0' )
