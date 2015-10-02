@@ -41,12 +41,11 @@ new Handle:fof_gungame_config = INVALID_HANDLE;
 new Handle:g_Cvar_Fists = INVALID_HANDLE;
 new Handle:g_Cvar_Heal = INVALID_HANDLE;
 new Handle:g_Cvar_Drunkness = INVALID_HANDLE;
-new Handle:fof_gungame_suicides = INVALID_HANDLE;
+new Handle:g_Cvar_Suicides = INVALID_HANDLE;
 new Handle:fof_gungame_logfile = INVALID_HANDLE;
 new Handle:fof_sv_dm_timer_ends_map = INVALID_HANDLE;
 new Handle:mp_bonusroundtime = INVALID_HANDLE;
 
-new bool:bSuicides = false;
 new String:szLogFile[PLATFORM_MAX_PATH];
 new Float:flBonusRoundTime = 5.0;
 
@@ -130,7 +129,7 @@ public OnPluginStart()
             _,
             FCVAR_PLUGIN|FCVAR_NOTIFY);
 
-    fof_gungame_suicides = CreateConVar(
+    g_Cvar_Suicides = CreateConVar(
             "fof_gungame_suicides",
             "1",
             "Set 0 to disallow suicides, level down for it.",
@@ -247,7 +246,6 @@ public OnConfigsExecuted()
 
 stock ScanConVars()
 {
-    bSuicides = GetConVarBool( fof_gungame_suicides );
     GetConVarString( fof_gungame_logfile, szLogFile, sizeof( szLogFile ) );
     flBonusRoundTime = FloatMax( 0.0, GetConVarFloat( mp_bonusroundtime ) );
 }
@@ -391,7 +389,7 @@ public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontB
     
     if( iVictim == iKiller || iKiller == 0 && GetEventInt( hEvent, "assist" ) <= 0 )
     {
-        if( !bSuicides && iPlayerLevel[iKiller] > 1 )
+        if( !AreSuicidesAllowed() && iPlayerLevel[iKiller] > 1 )
         {
             iPlayerLevel[iVictim]--;
             LeaderCheck();
@@ -1164,4 +1162,9 @@ bool:IsGungameEnabled()
 bool:AreFistsEnabled()
 {
     return GetConVarBool(g_Cvar_Fists);
+}
+
+bool:AreSuicidesAllowed()
+{
+    return GetConVarBool(g_Cvar_Suicides);
 }
