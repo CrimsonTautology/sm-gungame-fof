@@ -22,6 +22,8 @@
 #define MAX_WEAPON_LEVELS   128
 #define MAX_WEAPON_NAME_SIZE 32
 
+#define BASE_LEVEL 1
+
 #if !defined IN_FOF_SWITCH
 #define IN_FOF_SWITCH   (1<<14)
 #endif
@@ -198,7 +200,7 @@ public OnConfigsExecuted()
 
 LoadConfigFile(String:file[], &max_level, String:weapon_level_list[][], String:weapon_level_list_alt[][])
 {
-    max_level = 1;
+    max_level = BASE_LEVEL;
 
     new String:path[PLATFORM_MAX_PATH];
     BuildPath(Path_SM, path, sizeof(path), "configs/%s", file);
@@ -498,12 +500,17 @@ GetLevelOfClient(client)
 
 RaiseClientLevel(client)
 {
-    g_ClientLevel[client] += 1;
+    if(g_ClientLevel < g_MaxLevel) g_ClientLevel[client] += 1;
+}
+
+LowerClientLevel(client)
+{
+    if(g_ClientLevel > BASE_LEVEL) g_ClientLevel[client] -= 1;
 }
 
 ResetClientLevel(client)
 {
-    g_ClientLevel[client] = 1;
+    g_ClientLevel[client] = BASE_LEVEL;
 }
 
 bool:ClientHasWon(client)
@@ -557,7 +564,7 @@ ForceEquipWeapon(client, const String:weapon[])
 
 PrintWeaponLevelLists(max_level, String:weapon_level_list[][], String:weapon_level_list_alt[][])
 {
-    for(new level = 1; level <= max_level; level++)
+    for(new level = BASE_LEVEL; level <= max_level; level++)
     {
         PrintToServer( "weapon_level_list[%d]: \"%s\"; weapon_level_list_alt[%d]: \"%s\"",
                 level,
