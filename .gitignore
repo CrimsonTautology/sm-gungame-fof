@@ -2,7 +2,7 @@
 *.smx
 *.exe
 *.o
-karaoke.sp
+fof_gungame_orig.sp
 
 #vim files
 *.sw*
