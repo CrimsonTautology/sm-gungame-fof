@@ -47,8 +47,8 @@ new Handle:mp_bonusroundtime = INVALID_HANDLE;
 
 new Float:flBonusRoundTime = 5.0;
 
-new bool:bLateLoaded = false;
-new bool:bDeathmatch = false;
+new bool:g_IsLateLoaded = false;
+new bool:g_IsDeathmatch = false;
 new Handle:hHUDSync1 = INVALID_HANDLE;
 new Handle:hHUDSync2 = INVALID_HANDLE;
 new Handle:hWeapons = INVALID_HANDLE;
@@ -81,9 +81,9 @@ public Plugin:myinfo =
     url = "https://github.com/CrimsonTautology/sm_gungame_fof"
 };
 
-public APLRes:AskPluginLoad2( Handle:hPlugin, bool:bLateLoad, String:szError[], iErrorLength )
+public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 {
-    bLateLoaded = bLateLoad;
+    g_IsLateLoaded = late;
     return APLRes_Success;
 }
 
@@ -141,6 +141,7 @@ public OnPluginStart()
 
     HookConVarChange(g_Cvar_Config, OnCfgConVarChanged );
     HookConVarChange( mp_bonusroundtime = FindConVar( "mp_bonusroundtime" ), OnConVarChanged );
+
     AutoExecConfig();
 
 
@@ -152,6 +153,7 @@ public OnPluginStart()
 
     RegAdminCmd( "fof_gungame_restart", Command_RestartRound, ADMFLAG_GENERIC );
     RegAdminCmd( "fof_gungame_reload_cfg", Command_ReloadConfigFile, ADMFLAG_CONFIG );
+
     AddCommandListener( Command_item_dm_end, "item_dm_end" );
 
     hHUDSync1 = CreateHudSynchronizer();
@@ -161,7 +163,8 @@ public OnPluginStart()
 
     hWeapons = CreateKeyValues( "gungame_weapons" );
 
-    if( bLateLoaded )
+    //TODO I don't think checking if late loaded is needed
+    if(g_IsLateLoaded)
     {
         for( new i = 1; i <= MaxClients; i++ )
             if( IsClientInGame( i ) )
@@ -196,7 +199,7 @@ public OnMapStart()
     new Handle:mp_teamplay = FindConVar( "mp_teamplay" );
     new Handle:fof_sv_currentmode = FindConVar( "fof_sv_currentmode" );
     if( mp_teamplay != INVALID_HANDLE && fof_sv_currentmode != INVALID_HANDLE )
-        bDeathmatch = ( GetConVarInt( mp_teamplay ) == 0 && GetConVarInt( fof_sv_currentmode ) == 1 );
+        g_IsDeathmatch = ( GetConVarInt( mp_teamplay ) == 0 && GetConVarInt( fof_sv_currentmode ) == 1 );
     else
         SetFailState( "Missing mp_teamplay or/and fof_sv_currentmode console variable" );
     
@@ -237,7 +240,8 @@ public Output_OnMapSpawn( const String:szOutput[], iCaller, iActivator, Float:fl
 
 public OnConfigsExecuted()
 {
-    if( !IsGungameEnabled() || !bDeathmatch )
+    //TODO why are you failing instead of just disabling!!!???
+    if( !IsGungameEnabled() || !g_IsDeathmatch )
         SetFailState( "The plugin is disabled due to server configuration" );
     
     SetGameDescription( "Gun Game", true );
@@ -250,6 +254,7 @@ public OnConfigsExecuted()
 
 stock ScanConVars()
 {
+    //TODO handle this better
     flBonusRoundTime = FloatMax( 0.0, GetConVarFloat( mp_bonusroundtime ) );
 }
 
