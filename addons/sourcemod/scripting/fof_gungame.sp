@@ -518,13 +518,14 @@ bool:ClientHasWon(client)
     return GetLevelOfClient == g_MaxLevel;
 }
 
-StripInvalidWeapons(client, const String:target_weapon[])
+StripInvalidWeapons(client, const String:target_weapon[], const String:alt_target_weapon)
 {
-    decl String:class_name[WEAPON_NAME_SIZE], String:target_weapon2[WEAPON_NAME_SIZE];
-    new weapon_ent, strip_occured=false, has_target_weapon=false;
+    decl String:class_name[WEAPON_NAME_SIZE], String:target_weapon2[WEAPON_NAME_SIZE], String:alt_target_weapon2[WEAPON_NAME_SIZE];
+    new weapon_ent, strip_occured=false, has_target_weapon=false, has_alt_target_weapon=false;
     new offs = FindSendPropInfo("CBasePlayer","m_hMyWeapons");
 
     Format(target_weapon2, sizeof(target_weapon2), "%s2", target_weapon);
+    Format(alt_target_weapon2, sizeof(alt_target_weapon2), "%s2", alt_target_weapon);
     for(new i = 0; i <= 47; i++)
     {
         weapon_ent = GetEntDataEnt2(client,offs + (i * 4));
@@ -536,8 +537,17 @@ StripInvalidWeapons(client, const String:target_weapon[])
             has_target_weapon = true;
         }
 
+        if(StrEqual(class_name, alt_target_weapon) || StrEqual(class_name, alt_target_weapon2))
+        {
+            has_alt_target_weapon = true;
+        }
+
         //TODO add case for fists
-        if(!(StrEqual(class_name, target_weapon) || StrEqual(class_name, target_weapon2) || StrEqual(class_name, "weapon_fists")) )
+        if(!(
+            StrEqual(class_name, target_weapon) || StrEqual(class_name, target_weapon2) ||
+            StrEqual(class_name, alt_target_weapon) || StrEqual(class_name, alt_target_weapon2) ||
+            (AreFistsEnabled && StrEqual(class_name, "weapon_fists")) //Case for allowing fists
+            ) )
         {
             strip_occured=true;
             RemovePlayerItem(client, weapon_ent);
@@ -549,6 +559,8 @@ StripInvalidWeapons(client, const String:target_weapon[])
     {
         ForceEquipWeapon(client, target_weapon);
     }
+
+    //TODO equip alternate weapon
 
 }
 
