@@ -36,7 +36,7 @@
 
 
 
-new Handle:fof_gungame_enabled = INVALID_HANDLE;
+new Handle:g_Cvar_Enabled = INVALID_HANDLE;
 new Handle:fof_gungame_config = INVALID_HANDLE;
 new Handle:fof_gungame_fists = INVALID_HANDLE;
 new Handle:fof_gungame_equip_delay = INVALID_HANDLE;
@@ -99,7 +99,17 @@ public OnPluginStart()
 {
     CreateConVar("fof_gungame_version", PLUGIN_VERSION, PLUGIN_NAME, FCVAR_PLUGIN | FCVAR_SPONLY | FCVAR_REPLICATED | FCVAR_NOTIFY | FCVAR_DONTRECORD);
     
-    fof_gungame_enabled = CreateConVar( "fof_gungame_enabled", "0", _, FCVAR_PLUGIN|FCVAR_NOTIFY, true, 0.0, true, 1.0 );
+    g_Cvar_Enabled = CreateConVar(
+        "fof_gungame_enabled",
+        "1",
+        _,
+        FCVAR_PLUGIN | FCVAR_REPLICATED | FCVAR_NOTIFY,
+        true,
+        0.0,
+        true,
+        1.0
+        );
+
     HookConVarChange( fof_gungame_config = CreateConVar( "fof_gungame_config", "gungame_weapons.txt", _, FCVAR_PLUGIN ), OnCfgConVarChanged );
     HookConVarChange( fof_gungame_fists = CreateConVar( "fof_gungame_fists", "1", "Allow or disallow fists.", FCVAR_PLUGIN|FCVAR_NOTIFY, true, 0.0, true, 1.0 ), OnConVarChanged );
     HookConVarChange( fof_gungame_equip_delay = CreateConVar( "fof_gungame_equip_delay", "0.0", "Seconds before giving new equipment.", FCVAR_PLUGIN|FCVAR_NOTIFY, true, 0.0 ), OnConVarChanged );
@@ -204,7 +214,7 @@ public Output_OnMapSpawn( const String:szOutput[], iCaller, iActivator, Float:fl
 
 public OnConfigsExecuted()
 {
-    if( !GetConVarBool( fof_gungame_enabled ) || !bDeathmatch )
+    if( !IsGungameEnabled() || !bDeathmatch )
         SetFailState( "The plugin is disabled due to server configuration" );
     
     SetGameDescription( "Gun Game", true );
@@ -1121,3 +1131,9 @@ stock Int32Max( iValue1, iValue2 )
     return iValue1 > iValue2 ? iValue1 : iValue2;
 stock Float:FloatMax( Float:flValue1, Float:flValue2 )
     return FloatCompare( flValue1, flValue2 ) >= 0 ? flValue1 : flValue2;
+
+
+bool:IsGungameEnabled()
+{
+    return GetConVarBool(g_Cvar_Enabled);
+}
