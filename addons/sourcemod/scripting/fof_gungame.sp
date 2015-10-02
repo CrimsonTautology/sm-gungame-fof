@@ -22,6 +22,8 @@
 #define CHAT_PREFIX         "\x04 GG \x07FFDA00 "
 #define CONSOLE_PREFIX      "- GG: "
 
+#define MAX_WEAPON_LEVELS   128
+
 #if !defined IN_FOF_SWITCH
 #define IN_FOF_SWITCH   (1<<14)
 #endif
@@ -47,6 +49,7 @@ new Handle:mp_bonusroundtime = INVALID_HANDLE;
 
 new Float:flBonusRoundTime = 5.0;
 
+//TODO clean this up; there are way too many globals
 new bool:g_IsLateLoaded = false;
 new bool:g_IsDeathmatch = false;
 new Handle:g_HUD_Leader = INVALID_HANDLE;
@@ -71,6 +74,10 @@ new bool:bFirstSpawn[MAXPLAYERS+1];
 new Float:flStart[MAXPLAYERS+1];
 new bool:bInTheLead[MAXPLAYERS+1];
 new bool:bWasInTheLead[MAXPLAYERS+1];
+
+//Weaponlist for each level;  second array is for any secondary weapon
+new String:g_WeaponLevelList[MAX_WEAPON_LEVELS]  = {"weapon_fists_ghost"};
+new String:g_WeaponLevelList2[MAX_WEAPON_LEVELS] = {""};
 
 public Plugin:myinfo =
 {
