@@ -6,7 +6,7 @@
 #undef REQUIRE_EXTENSIONS
 #tryinclude <steamworks>
 
-#define PLUGIN_VERSION      "1.3-20150529"
+#define PLUGIN_VERSION      "2.0"
 #define CHAT_PREFIX         "\x04 GG \x07FFDA00 "
 #define CONSOLE_PREFIX      "- GG: "
 
@@ -72,7 +72,7 @@ new bool:bWasInTheLead[MAXPLAYERS+1];
 public Plugin:myinfo =
 {
     name = "[FoF] Gun Game",
-    author = "Leonardo",
+    author = "Leonardo, Modified by CrimsonTautology",
     description = "N/A",
     version = PLUGIN_VERSION,
     url = "http://www.xpenia.org/"
