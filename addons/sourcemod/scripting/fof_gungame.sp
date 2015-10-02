@@ -37,7 +37,7 @@
 
 
 new Handle:g_Cvar_Enabled = INVALID_HANDLE;
-new Handle:fof_gungame_config = INVALID_HANDLE;
+new Handle:g_Cvar_Config = INVALID_HANDLE;
 new Handle:g_Cvar_Fists = INVALID_HANDLE;
 new Handle:g_Cvar_Heal = INVALID_HANDLE;
 new Handle:g_Cvar_Drunkness = INVALID_HANDLE;
@@ -101,7 +101,11 @@ public OnPluginStart()
             true,
             1.0);
 
-    HookConVarChange( fof_gungame_config = CreateConVar( "fof_gungame_config", "gungame_weapons.txt", _, FCVAR_PLUGIN ), OnCfgConVarChanged );
+    g_Cvar_Config = CreateConVar(
+            "fof_gungame_config",
+            "gungame_weapons.txt",
+            _,
+            FCVAR_PLUGIN);
 
     g_Cvar_Fists = CreateConVar(
             "fof_gungame_fists",
@@ -134,8 +138,11 @@ public OnPluginStart()
             FCVAR_PLUGIN|FCVAR_NOTIFY);
 
     fof_sv_dm_timer_ends_map = FindConVar( "fof_sv_dm_timer_ends_map" );
+
+    HookConVarChange(g_Cvar_Config, OnCfgConVarChanged );
     HookConVarChange( mp_bonusroundtime = FindConVar( "mp_bonusroundtime" ), OnConVarChanged );
     AutoExecConfig();
+
 
     HookEvent( "player_activate", Event_PlayerActivate );
     HookEvent( "player_spawn", Event_PlayerSpawn );
@@ -250,15 +257,16 @@ stock ReloadConfigFile()
 {
     iMaxLevel = 1;
     
-    new String:szConfigPath[PLATFORM_MAX_PATH], String:szNextLevel[16];
-    GetConVarString( fof_gungame_config, szConfigPath, sizeof( szConfigPath ) );
-    BuildPath( Path_SM, szConfigPath, sizeof( szConfigPath ), "configs/%s", szConfigPath );
-    IntToString( iMaxLevel, szNextLevel, sizeof( szNextLevel ) );
+    new String:config_path[PLATFORM_MAX_PATH], String:next_level[16];
+    GetConVarString(g_Cvar_Config, config_path, sizeof(config_path));
+    BuildPath(Path_SM, config_path, sizeof(config_path), "configs/%s", config_path);
+
+    IntToString(iMaxLevel, next_level, sizeof(next_level));
     
     if( hWeapons != INVALID_HANDLE )
         CloseHandle( hWeapons );
     hWeapons = CreateKeyValues( "gungame_weapons" );
-    if( FileToKeyValues( hWeapons, szConfigPath ) )
+    if( FileToKeyValues( hWeapons, config_path ) )
     {
         new String:szLevel[16], iLevel, String:szPlayerWeapon[2][32];
         if( KvGotoFirstSubKey( hWeapons ) )
