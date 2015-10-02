@@ -39,14 +39,13 @@
 new Handle:g_Cvar_Enabled = INVALID_HANDLE;
 new Handle:fof_gungame_config = INVALID_HANDLE;
 new Handle:g_Cvar_Fists = INVALID_HANDLE;
-new Handle:fof_gungame_heal = INVALID_HANDLE;
+new Handle:g_Cvar_Heal = INVALID_HANDLE;
 new Handle:fof_gungame_drunkness = INVALID_HANDLE;
 new Handle:fof_gungame_suicides = INVALID_HANDLE;
 new Handle:fof_gungame_logfile = INVALID_HANDLE;
 new Handle:fof_sv_dm_timer_ends_map = INVALID_HANDLE;
 new Handle:mp_bonusroundtime = INVALID_HANDLE;
 
-new nHealAmount = 25;
 new Float:flDrunkness = 2.5;
 new bool:bSuicides = false;
 new String:szLogFile[PLATFORM_MAX_PATH];
@@ -104,13 +103,28 @@ public OnPluginStart()
         true,
         0.0,
         true,
-        1.0
-        );
+        1.0);
 
     HookConVarChange( fof_gungame_config = CreateConVar( "fof_gungame_config", "gungame_weapons.txt", _, FCVAR_PLUGIN ), OnCfgConVarChanged );
 
-    HookConVarChange( g_Cvar_Fists = CreateConVar( "fof_gungame_fists", "1", "Allow or disallow fists.", FCVAR_PLUGIN|FCVAR_NOTIFY, true, 0.0, true, 1.0 ), OnConVarChanged );
-    HookConVarChange( fof_gungame_heal = CreateConVar( "fof_gungame_heal", "25", "Amount of health to restore on each kill.", FCVAR_PLUGIN|FCVAR_NOTIFY, true, 0.0 ), OnConVarChanged );
+    g_Cvar_Fists = CreateConVar(
+        "fof_gungame_fists",
+        "1",
+        "Allow or disallow fists.",
+        FCVAR_PLUGIN|FCVAR_NOTIFY,
+        true,
+        0.0,
+        true,
+        1.0);
+
+    g_Cvar_Heal = CreateConVar(
+        "fof_gungame_heal",
+        "25",
+        "Amount of health to restore on each kill.",
+        FCVAR_PLUGIN|FCVAR_NOTIFY,
+        true,
+        0.0);
+
     HookConVarChange( fof_gungame_drunkness = CreateConVar( "fof_gungame_drunkness", "6.0", _, FCVAR_PLUGIN|FCVAR_NOTIFY ), OnConVarChanged );
     HookConVarChange( fof_gungame_suicides = CreateConVar( "fof_gungame_suicides", "1", "Set 0 to disallow suicides, level down for it.", FCVAR_PLUGIN|FCVAR_NOTIFY ), OnConVarChanged );
     HookConVarChange( fof_gungame_logfile = CreateConVar( "fof_gungame_logfile", "", _, FCVAR_PLUGIN ), OnConVarChanged );
@@ -224,7 +238,6 @@ public OnConfigsExecuted()
 
 stock ScanConVars()
 {
-    nHealAmount = Int32Max( 0, GetConVarInt( fof_gungame_heal ) );
     flDrunkness = GetConVarFloat( fof_gungame_drunkness );
     bSuicides = GetConVarBool( fof_gungame_suicides );
     GetConVarString( fof_gungame_logfile, szLogFile, sizeof( szLogFile ) );
@@ -495,8 +508,13 @@ public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontB
     
     if( IsPlayerAlive( iKiller ) )
     {
-        if( nHealAmount != 0 )
-            SetEntityHealth( iKiller, GetClientHealth( iKiller ) + nHealAmount );
+        new heal = GetConVarInt(g_Cvar_Heal);
+
+        if(heal > 0 )
+        {
+            SetEntityHealth(iKiller, GetClientHealth( iKiller ) + heal);
+        }
+
         CreateTimer( 0.01, Timer_GetDrunk, iKillerUID, TIMER_FLAG_NO_MAPCHANGE );
     }
     
