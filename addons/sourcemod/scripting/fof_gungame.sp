@@ -49,9 +49,9 @@ new Float:flBonusRoundTime = 5.0;
 
 new bool:g_IsLateLoaded = false;
 new bool:g_IsDeathmatch = false;
-new Handle:hHUDSync1 = INVALID_HANDLE;
-new Handle:hHUDSync2 = INVALID_HANDLE;
-new Handle:hWeapons = INVALID_HANDLE;
+new Handle:g_HUD_Leader = INVALID_HANDLE;
+new Handle:g_HUD_Level = INVALID_HANDLE;
+new Handle:g_Weapons = INVALID_HANDLE;
 new iAmmoOffset = -1;
 new iWinner = 0;
 new String:szWinner[MAX_NAME_LENGTH];
@@ -139,7 +139,6 @@ public OnPluginStart()
 
     fof_sv_dm_timer_ends_map = FindConVar( "fof_sv_dm_timer_ends_map" );
 
-    HookConVarChange(g_Cvar_Config, OnCfgConVarChanged );
     HookConVarChange( mp_bonusroundtime = FindConVar( "mp_bonusroundtime" ), OnConVarChanged );
 
     AutoExecConfig();
@@ -156,12 +155,12 @@ public OnPluginStart()
 
     AddCommandListener( Command_item_dm_end, "item_dm_end" );
 
-    hHUDSync1 = CreateHudSynchronizer();
-    hHUDSync2 = CreateHudSynchronizer();
+    g_HUD_Leader = CreateHudSynchronizer();
+    g_HUD_Level = CreateHudSynchronizer();
 
     iAmmoOffset = FindSendPropInfo( "CFoF_Player", "m_iAmmo" );
 
-    hWeapons = CreateKeyValues( "gungame_weapons" );
+    g_Weapons = CreateKeyValues( "gungame_weapons" );
 
     //TODO I don't think checking if late loaded is needed
     if(g_IsLateLoaded)
@@ -249,7 +248,10 @@ public OnConfigsExecuted()
     AllowMapEnd( false );
     
     ScanConVars();
-    ReloadConfigFile();
+
+    decl String:file[PLATFORM_MAX_PATH];
+    GetConVarString(g_Cvar_Config, file, sizeof(file));
+    LoadConfigFile(file, iMaxLevel, g_Weapons);
 }
 
 stock ScanConVars()
@@ -258,54 +260,54 @@ stock ScanConVars()
     flBonusRoundTime = FloatMax( 0.0, GetConVarFloat( mp_bonusroundtime ) );
 }
 
-stock ReloadConfigFile()
+LoadConfigFile(String:file[], &max_level, &Handle:weapons)
 {
-    iMaxLevel = 1;
+    max_level = 1;
     
-    new String:config_path[PLATFORM_MAX_PATH], String:next_level[16];
-    GetConVarString(g_Cvar_Config, config_path, sizeof(config_path));
-    BuildPath(Path_SM, config_path, sizeof(config_path), "configs/%s", config_path);
+    new String:path[PLATFORM_MAX_PATH];
+    BuildPath(Path_SM, path, sizeof(path), "configs/%s", file);
 
-    IntToString(iMaxLevel, next_level, sizeof(next_level));
-    
-    if( hWeapons != INVALID_HANDLE )
-        CloseHandle( hWeapons );
-    hWeapons = CreateKeyValues( "gungame_weapons" );
-    if( FileToKeyValues( hWeapons, config_path ) )
+    if(weapons != INVALID_HANDLE) CloseHandle(weapons);
+    weapons = CreateKeyValues( "gungame_weapons" );
+
+    if(!FileToKeyValues(weapons, path))
     {
-        new String:szLevel[16], iLevel, String:szPlayerWeapon[2][32];
-        if( KvGotoFirstSubKey( hWeapons ) )
-            do
-            {
-                KvGetSectionName( hWeapons, szLevel, sizeof( szLevel ) );
-                
-                if( !IsCharNumeric( szLevel[0] ) )
-                    continue;
-                
-                iLevel = StringToInt( szLevel );
-                if( iMaxLevel < iLevel )
-                    iMaxLevel = iLevel;
-                
-                if( KvGotoFirstSubKey( hWeapons, false ) )
-                {
-                    KvGetSectionName( hWeapons, szPlayerWeapon[0], sizeof( szPlayerWeapon[] ) );
-                    KvGoBack( hWeapons );
-                    KvGetString( hWeapons, szPlayerWeapon[0], szPlayerWeapon[1], sizeof( szPlayerWeapon[] ) );
-                }
-                PrintToServer( "%sLevel %d = %s%s%s", CONSOLE_PREFIX, iMaxLevel, szPlayerWeapon[0], szPlayerWeapon[1][0] != '\0' ? ", " : "", szPlayerWeapon[1] );
-            }
-            while( KvGotoNextKey( hWeapons ) );
-        PrintToServer( "%sTop level - %d", CONSOLE_PREFIX, iMaxLevel );
+        LogError("Could not read Gun Game config file \"%s\"", path);
+        SetFailState("Could not read Gun Game config file \"%s\"", path);
+        return;
     }
-    else
-        PrintToServer( "%sFalied to parse the config file.", CONSOLE_PREFIX );
+
+    new String:tmp[16], level, String:player_weapon[2][32];
+
+    KvGotoFirstSubKey(weapons);
+
+    do
+    {
+        KvGetSectionName(weapons, tmp, sizeof(tmp));
+
+        //Skip non-level keys
+        if(!IsCharNumeric(tmp[0]))
+            continue;
+
+        level = StringToInt(tmp);
+
+        if(max_level < level) max_level = level;
+
+        //TODO WHY ARE YOU NOT CACHING THIS?
+        if(KvGotoFirstSubKey(weapons, false ))
+        {
+            KvGetSectionName(weapons, player_weapon[0], sizeof(player_weapon[]));
+            KvGoBack(weapons);
+            KvGetString(weapons, player_weapon[0], player_weapon[1], sizeof(player_weapon[]));
+        }
+        PrintToServer( "%sLevel %d = %s%s%s", CONSOLE_PREFIX, max_level, player_weapon[0], player_weapon[1][0] != '\0' ? ", " : "", player_weapon[1] );
+    }
+    while(KvGotoNextKey(weapons));
+    PrintToServer( "%sTop level - %d", CONSOLE_PREFIX, max_level );
 }
 
 public OnConVarChanged( Handle:hConVar, const String:szOldValue[], const String:szNewValue[] )
     ScanConVars();
-
-public OnCfgConVarChanged( Handle:hConVar, const String:szOldValue[], const String:szNewValue[] )
-    ReloadConfigFile();
 
 public Action:Command_RestartRound( iClient, nArgs )
 {
@@ -315,7 +317,10 @@ public Action:Command_RestartRound( iClient, nArgs )
 
 public Action:Command_ReloadConfigFile( iClient, nArgs )
 {
-    ReloadConfigFile();
+    decl String:file[PLATFORM_MAX_PATH];
+    GetConVarString(g_Cvar_Config, file, sizeof(file));
+    LoadConfigFile(file, iMaxLevel, g_Weapons);
+
     return Plugin_Handled;
 }
 
@@ -441,13 +446,13 @@ public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontB
     IntToString( iPlayerLevel[iKiller], szPlayerLevel, sizeof( szPlayerLevel ) );
     
     new String:szAllowedWeapon[2][24];
-    KvRewind( hWeapons );
-    if( KvJumpToKey( hWeapons, szPlayerLevel, false ) && KvGotoFirstSubKey( hWeapons, false ) )
+    KvRewind( g_Weapons );
+    if( KvJumpToKey( g_Weapons, szPlayerLevel, false ) && KvGotoFirstSubKey( g_Weapons, false ) )
     {
-        KvGetSectionName( hWeapons, szAllowedWeapon[0], sizeof( szAllowedWeapon[] ) );
-        KvGoBack( hWeapons );
-        KvGetString( hWeapons, szAllowedWeapon[0], szAllowedWeapon[1], sizeof( szAllowedWeapon[] ) );
-        KvGoBack( hWeapons );
+        KvGetSectionName( g_Weapons, szAllowedWeapon[0], sizeof( szAllowedWeapon[] ) );
+        KvGoBack( g_Weapons );
+        KvGetString( g_Weapons, szAllowedWeapon[0], szAllowedWeapon[1], sizeof( szAllowedWeapon[] ) );
+        KvGoBack( g_Weapons );
     }
     
     //PrintToConsole( iKiller, "%sKilled player with %s (required:%s%s%s)", CONSOLE_PREFIX, szWeapon, szAllowedWeapon[0], szAllowedWeapon[1][0] != '\0' ? "," : "", szAllowedWeapon[1] );
@@ -579,18 +584,18 @@ public Hook_WeaponSwitchPost( iClient, iWeapon )
         }
         if( iWinner <= 0 )
         {
-            KvRewind( hWeapons );
-            if( KvJumpToKey( hWeapons, szPlayerLevel, false ) && KvGotoFirstSubKey( hWeapons, false ) )
+            KvRewind( g_Weapons );
+            if( KvJumpToKey( g_Weapons, szPlayerLevel, false ) && KvGotoFirstSubKey( g_Weapons, false ) )
             {
-                KvGetSectionName( hWeapons, szAllowedWeapon[0], sizeof( szAllowedWeapon[] ) );
-                KvGoBack( hWeapons );
+                KvGetSectionName( g_Weapons, szAllowedWeapon[0], sizeof( szAllowedWeapon[] ) );
+                KvGoBack( g_Weapons );
                 if( szAllowedWeapon[0][0] != '\0' )
                 {
                     PushArrayString( hAllowedWeapons, szAllowedWeapon[0] );
                 }
                 
-                KvGetString( hWeapons, szAllowedWeapon[0], szAllowedWeapon[1], sizeof( szAllowedWeapon[] ) );
-                KvGoBack( hWeapons );
+                KvGetString( g_Weapons, szAllowedWeapon[0], szAllowedWeapon[1], sizeof( szAllowedWeapon[] ) );
+                KvGoBack( g_Weapons );
                 if( szAllowedWeapon[1][0] != '\0' )
                 {
                     PushArrayString( hAllowedWeapons, szAllowedWeapon[1] );
@@ -762,13 +767,13 @@ public Action:Timer_UpdateEquipment( Handle:hTimer, any:iUserID )
             IntToString( iPlayerLevel[iClient], szPlayerLevel, sizeof( szPlayerLevel ) );
         
         new String:szPlayerWeapon[2][32];
-        KvRewind( hWeapons );
-        if( KvJumpToKey( hWeapons, szPlayerLevel ) && KvGotoFirstSubKey( hWeapons, false ) )
+        KvRewind( g_Weapons );
+        if( KvJumpToKey( g_Weapons, szPlayerLevel ) && KvGotoFirstSubKey( g_Weapons, false ) )
         {
-            KvGetSectionName( hWeapons, szPlayerWeapon[0], sizeof( szPlayerWeapon[] ) );
-            KvGoBack( hWeapons );
-            KvGetString( hWeapons, szPlayerWeapon[0], szPlayerWeapon[1], sizeof( szPlayerWeapon[] ) );
-            KvGoBack( hWeapons );
+            KvGetSectionName( g_Weapons, szPlayerWeapon[0], sizeof( szPlayerWeapon[] ) );
+            KvGoBack( g_Weapons );
+            KvGetString( g_Weapons, szPlayerWeapon[0], szPlayerWeapon[1], sizeof( szPlayerWeapon[] ) );
+            KvGoBack( g_Weapons );
             if( StrEqual( szPlayerWeapon[0], szPlayerWeapon[1] ) )
                 Format( szPlayerWeapon[1], sizeof( szPlayerWeapon[] ), "%s2", szPlayerWeapon[0] );
         }
@@ -868,39 +873,39 @@ public Action:Timer_UpdateHUD( Handle:hTimer, any:iUnused )
     for( new i = 1; i <= MaxClients; i++ )
         if( IsClientInGame( i ) )
         {
-            ClearSyncHud( i, hHUDSync1 );
-            ClearSyncHud( i, hHUDSync2 );
+            ClearSyncHud( i, g_HUD_Leader );
+            ClearSyncHud( i, g_HUD_Level );
             
             if( iWinner > 0 )
             {
                 if( nClients == iWinner )
                 {
                     SetHudTextParams( 0.08, 0.08, 1.125, 0, 255, 0, 180, 0, 0.0, 0.0, 0.0 );
-                    _ShowHudText( i, hHUDSync1, "YOU ARE THE WINNER" );
+                    _ShowHudText( i, g_HUD_Leader, "YOU ARE THE WINNER" );
                 }
                 else
                 {
                     SetHudTextParams( 0.08, 0.08, 1.125, 220, 220, 0, 180, 0, 0.0, 0.0, 0.0 );
-                    _ShowHudText( i, hHUDSync1, "WINNER:" );
+                    _ShowHudText( i, g_HUD_Leader, "WINNER:" );
                     
                     SetHudTextParams( 0.08, 0.14, 1.125, 220, 220, 0, 180, 0, 0.0, 0.0, 0.0 );
-                    _ShowHudText( i, hHUDSync1, "%s", szWinner );
+                    _ShowHudText( i, g_HUD_Leader, "%s", szWinner );
                 }
             }
             else if( nClients == 1 && iClients[0] == i && GetClientTeam( i ) != 1 )
             {
                 SetHudTextParams( 0.08, 0.08, 1.125, 0, 255, 0, 180, 0, 0.0, 0.0, 0.0 );
-                _ShowHudText( i, hHUDSync1, "THE LEADER" );
+                _ShowHudText( i, g_HUD_Leader, "THE LEADER" );
                 
                 if( iPlayerLevel[i] >= iMaxLevel )
                 {
                     SetHudTextParams( 0.08, 0.14, 1.125, 0, 255, 0, 180, 0, 0.0, 0.0, 0.0 );
-                    _ShowHudText( i, hHUDSync2, "LEVEL: FINAL" );
+                    _ShowHudText( i, g_HUD_Level, "LEVEL: FINAL" );
                 }
                 else
                 {
                     SetHudTextParams( 0.08, 0.14, 1.125, 220, 220, 220, 180, 0, 0.0, 0.0, 0.0 );
-                    _ShowHudText( i, hHUDSync2, "LEVEL: %d", iPlayerLevel[i] );
+                    _ShowHudText( i, g_HUD_Level, "LEVEL: %d", iPlayerLevel[i] );
                 }
             }
             else
@@ -908,12 +913,12 @@ public Action:Timer_UpdateHUD( Handle:hTimer, any:iUnused )
                 if( iTopLevel >= iMaxLevel )
                 {
                     SetHudTextParams( 0.08, 0.08, 1.125, 220, 120, 0, 180, 0, 0.0, 0.0, 0.0 );
-                    _ShowHudText( i, hHUDSync1, "LEADER: FINAL LVL" );
+                    _ShowHudText( i, g_HUD_Leader, "LEADER: FINAL LVL" );
                 }
                 else
                 {
                     SetHudTextParams( 0.08, 0.08, 1.125, 220, 220, 0, 180, 0, 0.0, 0.0, 0.0 );
-                    _ShowHudText( i, hHUDSync1, "LEADER: %d LVL", iTopLevel );
+                    _ShowHudText( i, g_HUD_Leader, "LEADER: %d LVL", iTopLevel );
                 }
                     
                 if( GetClientTeam( i ) == 1 )
@@ -922,12 +927,12 @@ public Action:Timer_UpdateHUD( Handle:hTimer, any:iUnused )
                 if( iPlayerLevel[i] >= iMaxLevel )
                 {
                     SetHudTextParams( 0.08, 0.14, 1.15, 0, 250, 0, 180, 0, 0.0, 0.0, 0.0 );
-                    _ShowHudText( i, hHUDSync2, "YOU: FINAL LVL" );
+                    _ShowHudText( i, g_HUD_Level, "YOU: FINAL LVL" );
                 }
                 else
                 {
                     SetHudTextParams( 0.08, 0.14, 1.15, 220, 220, 220, 180, 0, 0.0, 0.0, 0.0 );
-                    _ShowHudText( i, hHUDSync2, "YOU: %d LVL", iPlayerLevel[i] );
+                    _ShowHudText( i, g_HUD_Level, "YOU: %d LVL", iPlayerLevel[i] );
                 }
             }
         }
@@ -1158,8 +1163,6 @@ stock PrintToConsoleAll( const String:szFormat[], any:... )
                 PrintToConsole( i, szBuffer );
     }
 
-stock Int32Max( iValue1, iValue2 )
-    return iValue1 > iValue2 ? iValue1 : iValue2;
 stock Float:FloatMax( Float:flValue1, Float:flValue2 )
     return FloatCompare( flValue1, flValue2 ) >= 0 ? flValue1 : flValue2;
 
