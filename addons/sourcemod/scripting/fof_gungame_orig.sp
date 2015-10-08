@@ -131,7 +131,7 @@ public OnPluginStart()
 		RestartTheGame();
 	}
 	
-	HookEntityOutput( "logic_auto", "OnMapSpawn", Output_OnMapSpawn );
+	//HookEntityOutput( "logic_auto", "OnMapSpawn", Output_OnMapSpawn );
 }
 
 public OnPluginEnd()
@@ -191,6 +191,15 @@ public Output_OnMapSpawn( const String:szOutput[], iCaller, iActivator, Float:fl
 	new iCrate = INVALID_ENT_REFERENCE;
 	while( ( iCrate = FindEntityByClassname( iCrate, "fof_crate*" ) ) != INVALID_ENT_REFERENCE )
 		AcceptEntityInput( iCrate, "Kill" );
+}
+
+RemoveCrates()
+{
+    new ent = INVALID_ENT_REFERENCE;
+    while( (ent = FindEntityByClassname(ent, "fof_crate*")) != INVALID_ENT_REFERENCE)
+    {
+        RemoveEdict(ent);
+    }
 }
 
 public OnConfigsExecuted()
@@ -624,68 +633,70 @@ public Action:Timer_AllowMapEnd( Handle:hTimer, any:iUserID )
 
 public Action:Timer_RespawnPlayers( Handle:hTimer )
 {
-	AllowMapEnd( true );
-	
-	iWinner = 0;
-	szWinner[0] = '\0';
-	iLeader = 0;
-	for( new i = 0; i < sizeof( iPlayerLevel ); i++ )
-	{
-		iPlayerLevel[i] = 1;
-		flLastKill[i] = 0.0;
-		flStart[i] = 0.0;
-		bWasInTheLead[i] = false;
-		bInTheLead[i] = false;
-		bWasInGame[i] = false;
-		if( 0 < i <= MaxClients && IsClientInGame( i ) )
-		{
+    AllowMapEnd( true );
+
+    iWinner = 0;
+    szWinner[0] = '\0';
+    iLeader = 0;
+    for( new i = 0; i < sizeof( iPlayerLevel ); i++ )
+    {
+        iPlayerLevel[i] = 1;
+        flLastKill[i] = 0.0;
+        flStart[i] = 0.0;
+        bWasInTheLead[i] = false;
+        bInTheLead[i] = false;
+        bWasInGame[i] = false;
+        if( 0 < i <= MaxClients && IsClientInGame( i ) )
+        {
             bUpdateEquipment[i] = true;
             bWasInGame[i] = GetClientTeam( i ) != 1;
             flStart[i] = GetGameTime();
             //SetEntProp(i, Prop_Data, "m_iFrags", 1); //TODO
-		}
-		ExtinguishClient( i );
-	}
-	
-	CreateTimer( 0.05, Timer_RespawnPlayers_Fix, .flags = TIMER_FLAG_NO_MAPCHANGE );
-	
-	if( GetCommandFlags( "round_restart" ) != INVALID_FCVAR_FLAGS )
-		ServerCommand( "round_restart" );
-	else
-	{
-		if( IsValidEdict( fof_teamplay ) )
-		{
-			new String:szClassname[16];
-			GetEntityClassname( fof_teamplay, szClassname, sizeof( szClassname ) );
-			if( strcmp( szClassname, "fof_teamplay" ) )
-				fof_teamplay = INVALID_ENT_REFERENCE;
-		}
-		else
-			fof_teamplay = INVALID_ENT_REFERENCE;
-		if( fof_teamplay == INVALID_ENT_REFERENCE && ( fof_teamplay = FindEntityByClassname( INVALID_ENT_REFERENCE, "fof_teamplay" ) ) == INVALID_ENT_REFERENCE )
-			fof_teamplay = CreateEntityByName( "fof_teamplay" );
-		if( fof_teamplay != INVALID_ENT_REFERENCE )
-		{
-			SetVariantInt( -1 );
-			AcceptEntityInput( fof_teamplay, "InputRespawnPlayers" );
-		}
-	}
-	
-	new iEntity = INVALID_ENT_REFERENCE;
-	while( ( iEntity = FindEntityByClassname( iEntity, "weapon_*" ) ) != INVALID_ENT_REFERENCE )
-		AcceptEntityInput( iEntity, "Kill" );
-	iEntity = INVALID_ENT_REFERENCE;
-	while( ( iEntity = FindEntityByClassname( iEntity, "dynamite*" ) ) != INVALID_ENT_REFERENCE )
-		AcceptEntityInput( iEntity, "Kill" );
-	
-	for( new iClient = 1; iClient <= MaxClients; iClient++ )
-		if( IsClientInGame( iClient ) )
-		{
-			KillEdict( GetEntPropEnt( iClient, Prop_Send, "m_hRagdoll" ) );
-			SetEntPropEnt( iClient, Prop_Send, "m_hRagdoll", INVALID_ENT_REFERENCE );
-		}
-	
-	return Plugin_Stop;
+        }
+        ExtinguishClient( i );
+    }
+
+    CreateTimer( 0.05, Timer_RespawnPlayers_Fix, .flags = TIMER_FLAG_NO_MAPCHANGE );
+
+    if( GetCommandFlags( "round_restart" ) != INVALID_FCVAR_FLAGS )
+        ServerCommand( "round_restart" );
+    else
+    {
+        if( IsValidEdict( fof_teamplay ) )
+        {
+            new String:szClassname[16];
+            GetEntityClassname( fof_teamplay, szClassname, sizeof( szClassname ) );
+            if( strcmp( szClassname, "fof_teamplay" ) )
+                fof_teamplay = INVALID_ENT_REFERENCE;
+        }
+        else
+            fof_teamplay = INVALID_ENT_REFERENCE;
+        if( fof_teamplay == INVALID_ENT_REFERENCE && ( fof_teamplay = FindEntityByClassname( INVALID_ENT_REFERENCE, "fof_teamplay" ) ) == INVALID_ENT_REFERENCE )
+            fof_teamplay = CreateEntityByName( "fof_teamplay" );
+        if( fof_teamplay != INVALID_ENT_REFERENCE )
+        {
+            SetVariantInt( -1 );
+            AcceptEntityInput( fof_teamplay, "InputRespawnPlayers" );
+        }
+    }
+
+    new iEntity = INVALID_ENT_REFERENCE;
+    while( ( iEntity = FindEntityByClassname( iEntity, "weapon_*" ) ) != INVALID_ENT_REFERENCE )
+        AcceptEntityInput( iEntity, "Kill" );
+    iEntity = INVALID_ENT_REFERENCE;
+    while( ( iEntity = FindEntityByClassname( iEntity, "dynamite*" ) ) != INVALID_ENT_REFERENCE )
+        AcceptEntityInput( iEntity, "Kill" );
+
+    RemoveCrates();
+
+    for( new iClient = 1; iClient <= MaxClients; iClient++ )
+        if( IsClientInGame( iClient ) )
+        {
+            KillEdict( GetEntPropEnt( iClient, Prop_Send, "m_hRagdoll" ) );
+            SetEntPropEnt( iClient, Prop_Send, "m_hRagdoll", INVALID_ENT_REFERENCE );
+        }
+
+    return Plugin_Stop;
 }
 
 public Action:Timer_RespawnPlayers_Fix( Handle:hTimer )
