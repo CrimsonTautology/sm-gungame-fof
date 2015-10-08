@@ -2,7 +2,7 @@
 *.smx
 *.exe
 *.o
-fof_gungame_orig.sp
+#fof_gungame_orig.sp
 
 #vim files
 *.sw*
