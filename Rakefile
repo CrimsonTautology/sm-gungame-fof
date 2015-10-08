@@ -43,7 +43,7 @@ task :install do
   install_filetype '*.so', EXTENSIONS, false
 
   #Install data configfiles
-  install_filetype '*.txt', CONFIGS
+  install_filetype '*.txt', CONFIGS, false
 end
  
 desc "Clean up compiled files"
