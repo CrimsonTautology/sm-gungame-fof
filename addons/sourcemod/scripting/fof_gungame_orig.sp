@@ -23,6 +23,12 @@
 #define SOUND_TAKENLEAD  "music/kill4.wav"
 #define SOUND_TIEDLEAD  "music/kill3.wav"
 
+#define HUD1_X 0.18
+#define HUD1_Y 0.04
+
+#define HUD2_X 0.18
+#define HUD2_Y 0.10
+
 new Handle:sm_fof_gg_version = INVALID_HANDLE;
 new Handle:fof_gungame_enabled = INVALID_HANDLE;
 new Handle:fof_gungame_config = INVALID_HANDLE;
@@ -198,7 +204,7 @@ RemoveCrates()
     new ent = INVALID_ENT_REFERENCE;
     while( (ent = FindEntityByClassname(ent, "fof_crate*")) != INVALID_ENT_REFERENCE)
     {
-        RemoveEdict(ent);
+		AcceptEntityInput(ent, "Kill" );
     }
 }
 
@@ -876,31 +882,31 @@ public Action:Timer_UpdateHUD( Handle:hTimer, any:iUnused )
 			{
 				if( nClients == iWinner )
 				{
-					SetHudTextParams( 0.08, 0.08, 1.125, 0, 255, 0, 180, 0, 0.0, 0.0, 0.0 );
+					SetHudTextParams( HUD1_X, HUD1_Y, 1.125, 0, 255, 0, 180, 0, 0.0, 0.0, 0.0 );
 					_ShowHudText( i, hHUDSync1, "YOU ARE THE WINNER" );
 				}
 				else
 				{
-					SetHudTextParams( 0.08, 0.08, 1.125, 220, 220, 0, 180, 0, 0.0, 0.0, 0.0 );
+					SetHudTextParams( HUD1_X, HUD1_Y, 1.125, 220, 220, 0, 180, 0, 0.0, 0.0, 0.0 );
 					_ShowHudText( i, hHUDSync1, "WINNER:" );
 					
-					SetHudTextParams( 0.08, 0.14, 1.125, 220, 220, 0, 180, 0, 0.0, 0.0, 0.0 );
+					SetHudTextParams( HUD2_X, HUD2_Y, 1.125, 220, 220, 0, 180, 0, 0.0, 0.0, 0.0 );
 					_ShowHudText( i, hHUDSync1, "%s", szWinner );
 				}
 			}
 			else if( nClients == 1 && iClients[0] == i && GetClientTeam( i ) != 1 )
 			{
-				SetHudTextParams( 0.08, 0.08, 1.125, 0, 255, 0, 180, 0, 0.0, 0.0, 0.0 );
+				SetHudTextParams( HUD1_X, HUD1_Y, 1.125, 0, 255, 0, 180, 0, 0.0, 0.0, 0.0 );
 				_ShowHudText( i, hHUDSync1, "THE LEADER" );
 				
 				if( iPlayerLevel[i] >= iMaxLevel )
 				{
-					SetHudTextParams( 0.08, 0.14, 1.125, 0, 255, 0, 180, 0, 0.0, 0.0, 0.0 );
+					SetHudTextParams( HUD2_X, HUD2_Y, 1.125, 0, 255, 0, 180, 0, 0.0, 0.0, 0.0 );
 					_ShowHudText( i, hHUDSync2, "LEVEL: FINAL" );
 				}
 				else
 				{
-					SetHudTextParams( 0.08, 0.14, 1.125, 220, 220, 220, 180, 0, 0.0, 0.0, 0.0 );
+					SetHudTextParams( HUD2_X, HUD2_Y, 1.125, 220, 220, 220, 180, 0, 0.0, 0.0, 0.0 );
 					_ShowHudText( i, hHUDSync2, "LEVEL: %d", iPlayerLevel[i] );
 				}
 			}
@@ -908,12 +914,12 @@ public Action:Timer_UpdateHUD( Handle:hTimer, any:iUnused )
 			{
 				if( iTopLevel >= iMaxLevel )
 				{
-					SetHudTextParams( 0.08, 0.08, 1.125, 220, 120, 0, 180, 0, 0.0, 0.0, 0.0 );
+					SetHudTextParams( HUD1_X, HUD1_Y, 1.125, 220, 120, 0, 180, 0, 0.0, 0.0, 0.0 );
 					_ShowHudText( i, hHUDSync1, "LEADER: FINAL LVL" );
 				}
 				else
 				{
-					SetHudTextParams( 0.08, 0.08, 1.125, 220, 220, 0, 180, 0, 0.0, 0.0, 0.0 );
+					SetHudTextParams( HUD1_X, HUD1_Y, 1.125, 220, 220, 0, 180, 0, 0.0, 0.0, 0.0 );
 					_ShowHudText( i, hHUDSync1, "LEADER: %d LVL", iTopLevel );
 				}
 					
@@ -922,12 +928,12 @@ public Action:Timer_UpdateHUD( Handle:hTimer, any:iUnused )
 				
 				if( iPlayerLevel[i] >= iMaxLevel )
 				{
-					SetHudTextParams( 0.08, 0.14, 1.15, 0, 250, 0, 180, 0, 0.0, 0.0, 0.0 );
+					SetHudTextParams( HUD2_X, HUD2_Y, 1.15, 0, 250, 0, 180, 0, 0.0, 0.0, 0.0 );
 					_ShowHudText( i, hHUDSync2, "YOU: FINAL LVL" );
 				}
 				else
 				{
-					SetHudTextParams( 0.08, 0.14, 1.15, 220, 220, 220, 180, 0, 0.0, 0.0, 0.0 );
+					SetHudTextParams( HUD2_X, HUD2_Y, 1.15, 220, 220, 220, 180, 0, 0.0, 0.0, 0.0 );
 					_ShowHudText( i, hHUDSync2, "YOU: %d LVL", iPlayerLevel[i] );
 				}
 			}
