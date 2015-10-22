@@ -313,6 +313,7 @@ public Event_PlayerActivate( Handle:hEvent, const String:szEventName[], bool:bDo
 	{
         iPlayerLevel[ iClient ] = 1;
         //SetEntProp(iClient, Prop_Data, "m_iFrags", 1); //TODO
+        SetEntProp(iClient, Prop_Send, "m_nLastRoundNotoriety", iPlayerLevel[iClient]); //TODO
         flLastKill[ iClient ] = 0.0;
         flLastLevelUP[ iClient ] = 0.0;
         flLastUse[ iClient ] = 0.0;
@@ -518,38 +519,39 @@ public Action:Timer_GetDrunk( Handle:hTimer, any:iUserID )
 
 public Action:Event_PlayerDeathPost(Handle:event, const String:name[], bool:dontBroadcast)
 {
-    /*
     new victim = GetClientOfUserId(GetEventInt(event, "userid"));
     new killer = GetClientOfUserId(GetEventInt(event, "attacker"));
     new assist = GetClientOfUserId(GetEventInt(event, "assist"));
 
-    if(0 < victim <= MaxClients) SetEntProp(victim, Prop_Data, "m_iFrags", iPlayerLevel[victim]);
-    if(0 < killer <= MaxClients) SetEntProp(killer, Prop_Data, "m_iFrags", iPlayerLevel[killer]);
-    if(0 < assist <= MaxClients) SetEntProp(assist, Prop_Data, "m_iFrags", iPlayerLevel[assist]);
-
-    PrintToConsole(0, "Hit Event_PlayerScore %L %L %L", victim, killer, assist);
-    */
+    //TODO
+    if(0 < victim <= MaxClients) SetEntProp(victim, Prop_Send, "m_nLastRoundNotoriety", iPlayerLevel[victim]);
+    if(0 < killer <= MaxClients) SetEntProp(killer, Prop_Send, "m_nLastRoundNotoriety", iPlayerLevel[killer]);
+    if(0 < assist <= MaxClients) SetEntProp(assist, Prop_Send, "m_nLastRoundNotoriety", iPlayerLevel[assist]);
 }
 
 public Action:Hook_OnTakeDamage( iVictim, &iAttacker, &iInflictor, &Float:flDamage, &iDmgType, &iWeapon, Float:vecDmgForce[3], Float:vecDmgPosition[3], iDmgCustom )
 {
-	if( 0 < iVictim <= MaxClients && IsClientInGame( iVictim ) )
-	{
-		//PrintToChat( iVictim, "cid#%d: dmgtype: %d, killer: %d (%d), dmg: %f, wpn: %d", iVictim, iDmgType, iAttacker, iInflictor, flDamage, iWeapon );
-		
-		if( iWinner > 0 && iWinner == iAttacker )
-		{
-			flDamage = 300.0;
-			iDmgType |= DMG_CRUSH;
-			return Plugin_Changed;
-		}
-		else if( /*iWinner == iVictim ||*/ ( iDmgType & (DMG_BURN|DMG_DIRECT) ) == (DMG_BURN|DMG_DIRECT) && iPlayerLevel[iVictim] >= iMaxLevel )
-		{
-			flDamage = 0.0;
-			return Plugin_Changed;
-		}
-	}
-	return Plugin_Continue;
+    //TODO
+    if(0 < iVictim <= MaxClients) SetEntProp(iVictim, Prop_Send, "m_nLastRoundNotoriety", iPlayerLevel[iVictim]);
+    if(0 < iAttacker <= MaxClients) SetEntProp(iAttacker, Prop_Send, "m_nLastRoundNotoriety", iPlayerLevel[iAttacker]);
+
+    if( 0 < iVictim <= MaxClients && IsClientInGame( iVictim ) )
+    {
+        //PrintToChat( iVictim, "cid#%d: dmgtype: %d, killer: %d (%d), dmg: %f, wpn: %d", iVictim, iDmgType, iAttacker, iInflictor, flDamage, iWeapon );
+
+        if( iWinner > 0 && iWinner == iAttacker )
+        {
+            flDamage = 300.0;
+            iDmgType |= DMG_CRUSH;
+            return Plugin_Changed;
+        }
+        else if( /*iWinner == iVictim ||*/ ( iDmgType & (DMG_BURN|DMG_DIRECT) ) == (DMG_BURN|DMG_DIRECT) && iPlayerLevel[iVictim] >= iMaxLevel )
+        {
+            flDamage = 0.0;
+            return Plugin_Changed;
+        }
+    }
+    return Plugin_Continue;
 }
 
 public Hook_WeaponSwitchPost( iClient, iWeapon )
@@ -658,6 +660,7 @@ public Action:Timer_RespawnPlayers( Handle:hTimer )
             bWasInGame[i] = GetClientTeam( i ) != 1;
             flStart[i] = GetGameTime();
             //SetEntProp(i, Prop_Data, "m_iFrags", 1); //TODO
+            SetEntProp(i, Prop_Send, "m_nLastRoundNotoriety", iPlayerLevel[i]); //TODO
         }
         ExtinguishClient( i );
     }
