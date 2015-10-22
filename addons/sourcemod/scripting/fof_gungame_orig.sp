@@ -91,53 +91,54 @@ public APLRes:AskPluginLoad2( Handle:hPlugin, bool:bLateLoad, String:szError[], 
 
 public OnPluginStart()
 {
-	sm_fof_gg_version = CreateConVar( "sm_fof_gg_version", PLUGIN_VERSION, "FoF Gun Game Plugin Version", FCVAR_PLUGIN|FCVAR_NOTIFY|FCVAR_REPLICATED|FCVAR_SPONLY|FCVAR_DONTRECORD );
-	SetConVarString( sm_fof_gg_version, PLUGIN_VERSION );
-	HookConVarChange( sm_fof_gg_version, OnVerConVarChanged );
-	
-	fof_gungame_enabled = CreateConVar( "fof_gungame_enabled", "0", _, FCVAR_PLUGIN|FCVAR_NOTIFY, true, 0.0, true, 1.0 );
-	HookConVarChange( fof_gungame_config = CreateConVar( "fof_gungame_config", "gungame_weapons.txt", _, FCVAR_PLUGIN ), OnCfgConVarChanged );
-	HookConVarChange( fof_gungame_fists = CreateConVar( "fof_gungame_fists", "1", "Allow or disallow fists.", FCVAR_PLUGIN|FCVAR_NOTIFY, true, 0.0, true, 1.0 ), OnConVarChanged );
-	HookConVarChange( fof_gungame_equip_delay = CreateConVar( "fof_gungame_equip_delay", "0.0", "Seconds before giving new equipment.", FCVAR_PLUGIN|FCVAR_NOTIFY, true, 0.0 ), OnConVarChanged );
-	HookConVarChange( fof_gungame_heal = CreateConVar( "fof_gungame_heal", "25", "Amount of health to restore on each kill.", FCVAR_PLUGIN|FCVAR_NOTIFY, true, 0.0 ), OnConVarChanged );
-	HookConVarChange( fof_gungame_drunkness = CreateConVar( "fof_gungame_drunkness", "6.0", _, FCVAR_PLUGIN|FCVAR_NOTIFY ), OnConVarChanged );
-	HookConVarChange( fof_gungame_suicides = CreateConVar( "fof_gungame_suicides", "1", "Set 0 to disallow suicides, level down for it.", FCVAR_PLUGIN|FCVAR_NOTIFY ), OnConVarChanged );
-	HookConVarChange( fof_gungame_logfile = CreateConVar( "fof_gungame_logfile", "", _, FCVAR_PLUGIN ), OnConVarChanged );
-	fof_sv_dm_timer_ends_map = FindConVar( "fof_sv_dm_timer_ends_map" );
-	HookConVarChange( mp_bonusroundtime = FindConVar( "mp_bonusroundtime" ), OnConVarChanged );
-	AutoExecConfig();
-	
-	HookEvent( "player_activate", Event_PlayerActivate );
-	HookEvent( "player_spawn", Event_PlayerSpawn );
-	HookEvent( "player_shoot", Event_PlayerShoot );
-	//HookEvent( "player_death", Event_PlayerDeath_Pre, EventHookMode_Pre );
-	HookEvent( "player_death", Event_PlayerDeath );
-	HookEvent( "player_death", Event_PlayerDeathPost, EventHookMode_Post);
-	
-	RegAdminCmd( "fof_gungame_restart", Command_RestartRound, ADMFLAG_GENERIC );
-	RegAdminCmd( "fof_gungame_reload_cfg", Command_ReloadConfigFile, ADMFLAG_CONFIG );
-	AddCommandListener( Command_item_dm_end, "item_dm_end" );
-	
-	hHUDSync1 = CreateHudSynchronizer();
-	hHUDSync2 = CreateHudSynchronizer();
-	
-	iAmmoOffset = FindSendPropInfo( "CFoF_Player", "m_iAmmo" );
-	
-	hWeapons = CreateKeyValues( "gungame_weapons" );
-	
-	if( bLateLoaded )
-	{
-		for( new i = 1; i <= MaxClients; i++ )
-			if( IsClientInGame( i ) )
-			{
-				SDKHook( i, SDKHook_OnTakeDamage, Hook_OnTakeDamage );
-				SDKHook( i, SDKHook_WeaponSwitchPost, Hook_WeaponSwitchPost );
-			}
-		
-		RestartTheGame();
-	}
-	
-	//HookEntityOutput( "logic_auto", "OnMapSpawn", Output_OnMapSpawn );
+    sm_fof_gg_version = CreateConVar( "sm_fof_gg_version", PLUGIN_VERSION, "FoF Gun Game Plugin Version", FCVAR_PLUGIN|FCVAR_NOTIFY|FCVAR_REPLICATED|FCVAR_SPONLY|FCVAR_DONTRECORD );
+    SetConVarString( sm_fof_gg_version, PLUGIN_VERSION );
+    HookConVarChange( sm_fof_gg_version, OnVerConVarChanged );
+
+    fof_gungame_enabled = CreateConVar( "fof_gungame_enabled", "0", _, FCVAR_PLUGIN|FCVAR_NOTIFY, true, 0.0, true, 1.0 );
+    HookConVarChange( fof_gungame_config = CreateConVar( "fof_gungame_config", "gungame_weapons.txt", _, FCVAR_PLUGIN ), OnCfgConVarChanged );
+    HookConVarChange( fof_gungame_fists = CreateConVar( "fof_gungame_fists", "1", "Allow or disallow fists.", FCVAR_PLUGIN|FCVAR_NOTIFY, true, 0.0, true, 1.0 ), OnConVarChanged );
+    HookConVarChange( fof_gungame_equip_delay = CreateConVar( "fof_gungame_equip_delay", "0.0", "Seconds before giving new equipment.", FCVAR_PLUGIN|FCVAR_NOTIFY, true, 0.0 ), OnConVarChanged );
+    HookConVarChange( fof_gungame_heal = CreateConVar( "fof_gungame_heal", "25", "Amount of health to restore on each kill.", FCVAR_PLUGIN|FCVAR_NOTIFY, true, 0.0 ), OnConVarChanged );
+    HookConVarChange( fof_gungame_drunkness = CreateConVar( "fof_gungame_drunkness", "6.0", _, FCVAR_PLUGIN|FCVAR_NOTIFY ), OnConVarChanged );
+    HookConVarChange( fof_gungame_suicides = CreateConVar( "fof_gungame_suicides", "1", "Set 0 to disallow suicides, level down for it.", FCVAR_PLUGIN|FCVAR_NOTIFY ), OnConVarChanged );
+    HookConVarChange( fof_gungame_logfile = CreateConVar( "fof_gungame_logfile", "", _, FCVAR_PLUGIN ), OnConVarChanged );
+    fof_sv_dm_timer_ends_map = FindConVar( "fof_sv_dm_timer_ends_map" );
+    HookConVarChange( mp_bonusroundtime = FindConVar( "mp_bonusroundtime" ), OnConVarChanged );
+    AutoExecConfig();
+
+    HookEvent( "player_activate", Event_PlayerActivate );
+    HookEvent( "player_spawn", Event_PlayerSpawn );
+    HookEvent( "player_shoot", Event_PlayerShoot );
+    //HookEvent( "player_death", Event_PlayerDeath_Pre, EventHookMode_Pre );
+    HookEvent( "player_death", Event_PlayerDeath );
+    HookEvent( "player_death", Event_PlayerDeathPost, EventHookMode_Post);
+
+    RegAdminCmd( "fof_gungame_restart", Command_RestartRound, ADMFLAG_GENERIC );
+    RegAdminCmd( "fof_gungame_reload_cfg", Command_ReloadConfigFile, ADMFLAG_CONFIG );
+    RegAdminCmd("fof_gungame_scores", Command_DumpScores, ADMFLAG_ROOT, "[DEBUG] List player score values");
+    AddCommandListener( Command_item_dm_end, "item_dm_end" );
+
+    hHUDSync1 = CreateHudSynchronizer();
+    hHUDSync2 = CreateHudSynchronizer();
+
+    iAmmoOffset = FindSendPropInfo( "CFoF_Player", "m_iAmmo" );
+
+    hWeapons = CreateKeyValues( "gungame_weapons" );
+
+    if( bLateLoaded )
+    {
+        for( new i = 1; i <= MaxClients; i++ )
+            if( IsClientInGame( i ) )
+            {
+                SDKHook( i, SDKHook_OnTakeDamage, Hook_OnTakeDamage );
+                SDKHook( i, SDKHook_WeaponSwitchPost, Hook_WeaponSwitchPost );
+            }
+
+        RestartTheGame();
+    }
+
+    //HookEntityOutput( "logic_auto", "OnMapSpawn", Output_OnMapSpawn );
 }
 
 public OnPluginEnd()
@@ -153,6 +154,8 @@ public OnClientDisconnect_Post( iClient )
 	new timeleft;
 	if( GetMapTimeLeft( timeleft ) && timeleft > 0 && iWinner <= 0 )
 		LeaderCheck();
+
+    iPlayerLevel[iClient] = 0;
 }
 
 public OnMapStart()
@@ -1207,3 +1210,21 @@ stock Int32Max( iValue1, iValue2 )
 	return iValue1 > iValue2 ? iValue1 : iValue2;
 stock Float:FloatMax( Float:flValue1, Float:flValue2 )
 	return FloatCompare( flValue1, flValue2 ) >= 0 ? flValue1 : flValue2;
+
+public Action:Command_DumpScores(caller, args)
+{
+    PrintToConsole(caller, "level notoriety frags deaths user");
+    for (new client=1; client <= MaxClients; client++)
+    {
+        if(!IsClientInGame(client) || IsFakeClient(client))
+            continue;
+
+        PrintToConsole(caller, "%5d %9d %5d %6d %L",
+                iPlayerLevel[client],
+                GetEntProp(client, Prop_Send, "m_nLastRoundNotoriety"),
+                GetEntProp(client, Prop_Data, "m_iFrags"),
+                GetEntProp(client, Prop_Data, "m_iDeaths"),
+                client);
+    }
+    return Plugin_Handled;
+}
