@@ -1112,10 +1112,8 @@ stock RestartTheGame()
 
 stock AllowMapEnd( bool:bState )
 {
-    /*
 	if( fof_sv_dm_timer_ends_map != INVALID_HANDLE )
 		SetConVarBool( fof_sv_dm_timer_ends_map, bState, false, false );
-        */
 }
 
 stock LeaderCheck( bool:bShowMessage = true )
