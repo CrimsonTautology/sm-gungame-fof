@@ -149,11 +149,11 @@ public OnPluginEnd()
 
 public OnClientDisconnect_Post( iClient )
 {
-	//if( iWinner == iClient ) iWinner = 0;
-	
-	new timeleft;
-	if( GetMapTimeLeft( timeleft ) && timeleft > 0 && iWinner <= 0 )
-		LeaderCheck();
+    //if( iWinner == iClient ) iWinner = 0;
+
+    new timeleft;
+    if( GetMapTimeLeft( timeleft ) && timeleft > 0 && iWinner <= 0 )
+        LeaderCheck();
 
     iPlayerLevel[iClient] = 0;
 }
