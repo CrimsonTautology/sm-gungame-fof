@@ -18,7 +18,8 @@
 #define SOUND_STINGER1  "music/bounty/bounty_objective_stinger1.mp3"
 #define SOUND_STINGER2  "music/bounty/bounty_objective_stinger2.mp3"
 #define SOUND_FIGHT  "music/standoff1.mp3"
-#define SOUND_HUMILIATION  "halloween/witch_laugh.wav"
+//#define SOUND_HUMILIATION  "halloween/witch_laugh.wav"
+#define SOUND_HUMILIATION  "animals/chicken_pain1.wav"
 #define SOUND_LOSTLEAD  "music/most_wanted_stinger.wav"
 #define SOUND_TAKENLEAD  "music/kill4.wav"
 #define SOUND_TIEDLEAD  "music/kill3.wav"
@@ -363,154 +364,170 @@ public Event_PlayerShoot( Handle:hEvent, const String:szEventName[], bool:bDontB
 
 public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontBroadcast )
 {
-	new iVictim = GetClientOfUserId( GetEventInt( hEvent, "userid" ) );
-	new iKillerUID = GetEventInt( hEvent, "attacker" );
-	new iKiller = GetClientOfUserId( iKillerUID );
-	new iDmgBits = GetClientOfUserId( GetEventInt( hEvent, "damagebits" ) );
-	
-	if( iDmgBits & DMG_FALL )
-		return;
-	
-	if( iWinner > 0 )
-	{
-		if( 0 < iVictim <= MaxClients && IsClientInGame( iVictim ) )
-			EmitSoundToClient( iVictim, SOUND_HUMILIATION);
-		return;
-	}
-	
-	if( iVictim == iKiller || iKiller == 0 && GetEventInt( hEvent, "assist" ) <= 0 )
-	{
-		if( !bSuicides && iPlayerLevel[iKiller] > 1 )
-		{
-			iPlayerLevel[iVictim]--;
-			LeaderCheck();
-			
-			PrintCenterText( iVictim, "Ungraceful death! You are now level %d of %d.", iPlayerLevel[iVictim], iMaxLevel );
-			PrintToChat( iVictim, "%sUngraceful death! You are now level %d of %d.", CHAT_PREFIX, iPlayerLevel[iVictim], iMaxLevel );
-			EmitSoundToClient( iVictim, SOUND_STINGER1 );
-		}
-		return;
-	}
-	
-	if( !( 0 < iKiller <= MaxClients && IsClientInGame( iVictim ) && IsClientInGame( iKiller ) ) )
-		return;
+    new iVictim = GetClientOfUserId( GetEventInt( hEvent, "userid" ) );
+    new iKillerUID = GetEventInt( hEvent, "attacker" );
+    new iKiller = GetClientOfUserId( iKillerUID );
+    new iDmgBits = GetClientOfUserId( GetEventInt( hEvent, "damagebits" ) );
 
-	new Float:flCurTime = GetGameTime();
-	if( ( flCurTime - flLastKill[iKiller] ) < 0.01 || ( flCurTime - flLastLevelUP[iKiller] ) <= 0.0 )
-		return;
-	flLastKill[iKiller] = flCurTime;
-	
-	new String:szWeapon[32];
-	GetEventString( hEvent, "weapon", szWeapon, sizeof( szWeapon ) );
-	if( StrEqual( szWeapon, "arrow" ) )
-		strcopy( szWeapon, sizeof( szWeapon ), "weapon_bow" );
-	else if( StrEqual( szWeapon, "thrown_axe" ) )
-		strcopy( szWeapon, sizeof( szWeapon ), "weapon_axe" );
-	else if( StrEqual( szWeapon, "thrown_knife" ) )
-		strcopy( szWeapon, sizeof( szWeapon ), "weapon_knife" );
-	else if( StrEqual( szWeapon, "thrown_machete" ) )
-		strcopy( szWeapon, sizeof( szWeapon ), "weapon_machete" );
-	else if( StrEqual( szWeapon, "blast" ) )
-		strcopy( szWeapon, sizeof( szWeapon ), szLastWeaponFired[iKiller] );
-	else
-	{
-		if( szWeapon[strlen(szWeapon)-1] == '2' )
-			szWeapon[strlen(szWeapon)-1] = '\0';
-		Format( szWeapon, sizeof( szWeapon ), "weapon_%s", szWeapon );
-	}
-	
-	new String:szPlayerLevel[16];
-	IntToString( iPlayerLevel[iKiller], szPlayerLevel, sizeof( szPlayerLevel ) );
-	
-	new String:szAllowedWeapon[2][24];
-	KvRewind( hWeapons );
-	if( KvJumpToKey( hWeapons, szPlayerLevel, false ) && KvGotoFirstSubKey( hWeapons, false ) )
-	{
-		KvGetSectionName( hWeapons, szAllowedWeapon[0], sizeof( szAllowedWeapon[] ) );
-		KvGoBack( hWeapons );
-		KvGetString( hWeapons, szAllowedWeapon[0], szAllowedWeapon[1], sizeof( szAllowedWeapon[] ) );
-		KvGoBack( hWeapons );
-	}
-	
-	//PrintToConsole( iKiller, "%sKilled player with %s (required:%s%s%s)", CONSOLE_PREFIX, szWeapon, szAllowedWeapon[0], szAllowedWeapon[1][0] != '\0' ? "," : "", szAllowedWeapon[1] );
-	
-	if( szAllowedWeapon[0][0] == '\0' && szAllowedWeapon[1][0] == '\0' )
-	{
-		LogError( "Missing weapon for level %d!", iPlayerLevel[iKiller] );
-		//return;
-	}
-	else if( !IsFakeClient( iKiller ) && !StrEqual( szWeapon, szAllowedWeapon[0] ) && !StrEqual( szWeapon, szAllowedWeapon[1] ) )
-		return;
-	
-	flLastLevelUP[iKiller] = flCurTime + flEquipDelay;
-	iPlayerLevel[iKiller]++;
-	if( iPlayerLevel[iKiller] > iMaxLevel )
-	{
-		iPlayerLevel[iKiller] = iMaxLevel;
-		iWinner = iKiller;
-		GetClientName( iKiller, szWinner, sizeof( szWinner ) );
-		
-		new String:szTime[64], Float:flDiff = ( GetGameTime() - flStart[iKiller] );
-		if( flDiff > 60.0 )
-		{
-			new iMins = 0;
-			while( flDiff >= 60.0 )
-			{
-				flDiff -= 60.0;
-				iMins++;
-			}
-			if( flDiff > 0.0 )
-				FormatEx( szTime, sizeof( szTime ), "%d min. %.1f sec.", iMins, flDiff );
-			else
-				FormatEx( szTime, sizeof( szTime ), "%d min.", iMins );
-		}
-		else
-			FormatEx( szTime, sizeof( szTime ), " %.1f sec.", flDiff );
-		
-		PrintCenterTextAll( "%N has won the round!", iKiller );
-		PrintToChatAll( "%sPlayer \x03%N\x07FFDA00 has won the round in \x03%s", CHAT_PREFIX, iKiller, szTime );
-		PrintToServer( "%sPlayer '%N' has won the round in %s", CONSOLE_PREFIX, iKiller, szTime );
-		EmitSoundToAll( SOUND_STINGER2 );
-		
-		for( new i = 1; i <= MaxClients; i++ )
-		{
-			if( i != iKiller )
-			{
-				iPlayerLevel[i] = 1;
-				flStart[i] = 0.0;
-			}
-			if( IsClientInGame( i ) )
-				CreateTimer( 0.0, Timer_UpdateEquipment, GetClientUserId( i ), TIMER_FLAG_NO_MAPCHANGE );
-		}
-		
-		CreateTimer( 3.0, Timer_RespawnAnnounce, .flags = TIMER_FLAG_NO_MAPCHANGE );
-		AllowMapEnd( true );
-	}
-	else if( iPlayerLevel[iKiller] == iMaxLevel )
-	{
-		LeaderCheck( false );
-		
-		PrintCenterTextAll( "%N is on the final weapon!", iKiller );
-		PrintToConsoleAll( "%sPlayer '%N' is on the final weapon!", CONSOLE_PREFIX, iKiller );
-		EmitSoundToClient( iKiller, SOUND_STINGER1 );
-	}
-	else
-	{
-		LeaderCheck();
-		
-		PrintCenterText( iKiller, "Leveled up! You are now level %d of %d.", iPlayerLevel[iKiller], iMaxLevel );
-		PrintToConsole( iKiller, "%sLeveled up! You are now level %d of %d.", CONSOLE_PREFIX, iPlayerLevel[iKiller], iMaxLevel );
-		EmitSoundToClient( iKiller, SOUND_STINGER1 );
-	}
-	
-	if( IsPlayerAlive( iKiller ) )
-	{
-		if( nHealAmount != 0 )
-			SetEntityHealth( iKiller, GetClientHealth( iKiller ) + nHealAmount );
-		CreateTimer( 0.01, Timer_GetDrunk, iKillerUID, TIMER_FLAG_NO_MAPCHANGE );
-	}
-	
-	CreateTimer( 0.0, Timer_UpdateEquipment, iKillerUID, TIMER_FLAG_NO_MAPCHANGE );
+    if( iDmgBits & DMG_FALL )
+        return;
+
+    if( iWinner > 0 )
+    {
+        if( 0 < iVictim <= MaxClients && IsClientInGame( iVictim ) )
+            EmitSoundToClient( iVictim, SOUND_HUMILIATION);
+        return;
+    }
+
+    if( iVictim == iKiller || iKiller == 0 && GetEventInt( hEvent, "assist" ) <= 0 )
+    {
+        if( !bSuicides && iPlayerLevel[iKiller] > 1 )
+        {
+            iPlayerLevel[iVictim]--;
+            LeaderCheck();
+
+            PrintCenterText( iVictim, "Ungraceful death! You are now level %d of %d.", iPlayerLevel[iVictim], iMaxLevel );
+            PrintToChat( iVictim, "%sUngraceful death! You are now level %d of %d.", CHAT_PREFIX, iPlayerLevel[iVictim], iMaxLevel );
+            EmitSoundToClient( iVictim, SOUND_STINGER1 );
+        }
+        return;
+    }
+
+    if( !( 0 < iKiller <= MaxClients && IsClientInGame( iVictim ) && IsClientInGame( iKiller ) ) )
+        return;
+
+    new Float:flCurTime = GetGameTime();
+    if( ( flCurTime - flLastKill[iKiller] ) < 0.01 || ( flCurTime - flLastLevelUP[iKiller] ) <= 0.0 )
+        return;
+    flLastKill[iKiller] = flCurTime;
+
+    new String:szWeapon[32];
+    GetEventString( hEvent, "weapon", szWeapon, sizeof( szWeapon ) );
+
+    //Humiliate victim on fists kill by lowering their level
+    if( (StrEqual(szWeapon, "fists") ||  StrEqual(szWeapon, "kick-fall") ) 
+        && iPlayerLevel[iVictim] > 1 && 0 < iKiller <= MaxClients)
+    {
+        iPlayerLevel[iVictim]--;
+        LeaderCheck();
+
+        PrintCenterTextAll("%N was humiliated by %N and lost a level!", iVictim, iKiller, iPlayerLevel[iVictim], iMaxLevel );
+        PrintToChat( iVictim, "%sHumiliating death! You are now level %d of %d.", CHAT_PREFIX, iPlayerLevel[iVictim], iMaxLevel );
+        EmitSoundToClient( iVictim, SOUND_HUMILIATION );
+        EmitSoundToClient( iKiller, SOUND_HUMILIATION );
+    }
+
+    if( StrEqual( szWeapon, "arrow" ) )
+        strcopy( szWeapon, sizeof( szWeapon ), "weapon_bow" );
+    else if( StrEqual( szWeapon, "thrown_axe" ) )
+        strcopy( szWeapon, sizeof( szWeapon ), "weapon_axe" );
+    else if( StrEqual( szWeapon, "thrown_knife" ) )
+        strcopy( szWeapon, sizeof( szWeapon ), "weapon_knife" );
+    else if( StrEqual( szWeapon, "thrown_machete" ) )
+        strcopy( szWeapon, sizeof( szWeapon ), "weapon_machete" );
+    else if( StrEqual( szWeapon, "blast" ) )
+        strcopy( szWeapon, sizeof( szWeapon ), szLastWeaponFired[iKiller] );
+    else
+    {
+        if( szWeapon[strlen(szWeapon)-1] == '2' )
+            szWeapon[strlen(szWeapon)-1] = '\0';
+        Format( szWeapon, sizeof( szWeapon ), "weapon_%s", szWeapon );
+    }
+
+
+
+    new String:szPlayerLevel[16];
+    IntToString( iPlayerLevel[iKiller], szPlayerLevel, sizeof( szPlayerLevel ) );
+
+    new String:szAllowedWeapon[2][24];
+    KvRewind( hWeapons );
+    if( KvJumpToKey( hWeapons, szPlayerLevel, false ) && KvGotoFirstSubKey( hWeapons, false ) )
+    {
+        KvGetSectionName( hWeapons, szAllowedWeapon[0], sizeof( szAllowedWeapon[] ) );
+        KvGoBack( hWeapons );
+        KvGetString( hWeapons, szAllowedWeapon[0], szAllowedWeapon[1], sizeof( szAllowedWeapon[] ) );
+        KvGoBack( hWeapons );
+    }
+
+    //PrintToConsole( iKiller, "%sKilled player with %s (required:%s%s%s)", CONSOLE_PREFIX, szWeapon, szAllowedWeapon[0], szAllowedWeapon[1][0] != '\0' ? "," : "", szAllowedWeapon[1] );
+
+    if( szAllowedWeapon[0][0] == '\0' && szAllowedWeapon[1][0] == '\0' )
+    {
+        LogError( "Missing weapon for level %d!", iPlayerLevel[iKiller] );
+        //return;
+    }
+    else if( !IsFakeClient( iKiller ) && !StrEqual( szWeapon, szAllowedWeapon[0] ) && !StrEqual( szWeapon, szAllowedWeapon[1] ) )
+        return;
+
+    flLastLevelUP[iKiller] = flCurTime + flEquipDelay;
+    iPlayerLevel[iKiller]++;
+    if( iPlayerLevel[iKiller] > iMaxLevel )
+    {
+        iPlayerLevel[iKiller] = iMaxLevel;
+        iWinner = iKiller;
+        GetClientName( iKiller, szWinner, sizeof( szWinner ) );
+
+        new String:szTime[64], Float:flDiff = ( GetGameTime() - flStart[iKiller] );
+        if( flDiff > 60.0 )
+        {
+            new iMins = 0;
+            while( flDiff >= 60.0 )
+            {
+                flDiff -= 60.0;
+                iMins++;
+            }
+            if( flDiff > 0.0 )
+                FormatEx( szTime, sizeof( szTime ), "%d min. %.1f sec.", iMins, flDiff );
+            else
+                FormatEx( szTime, sizeof( szTime ), "%d min.", iMins );
+        }
+        else
+            FormatEx( szTime, sizeof( szTime ), " %.1f sec.", flDiff );
+
+        PrintCenterTextAll( "%N has won the round!", iKiller );
+        PrintToChatAll( "%sPlayer \x03%N\x07FFDA00 has won the round in \x03%s", CHAT_PREFIX, iKiller, szTime );
+        PrintToServer( "%sPlayer '%N' has won the round in %s", CONSOLE_PREFIX, iKiller, szTime );
+        EmitSoundToAll( SOUND_STINGER2 );
+
+        for( new i = 1; i <= MaxClients; i++ )
+        {
+            if( i != iKiller )
+            {
+                iPlayerLevel[i] = 1;
+                flStart[i] = 0.0;
+            }
+            if( IsClientInGame( i ) )
+                CreateTimer( 0.0, Timer_UpdateEquipment, GetClientUserId( i ), TIMER_FLAG_NO_MAPCHANGE );
+        }
+
+        CreateTimer( 3.0, Timer_RespawnAnnounce, .flags = TIMER_FLAG_NO_MAPCHANGE );
+        AllowMapEnd( true );
+    }
+    else if( iPlayerLevel[iKiller] == iMaxLevel )
+    {
+        LeaderCheck( false );
+
+        PrintCenterTextAll( "%N is on the final weapon!", iKiller );
+        PrintToConsoleAll( "%sPlayer '%N' is on the final weapon!", CONSOLE_PREFIX, iKiller );
+        EmitSoundToClient( iKiller, SOUND_STINGER1 );
+    }
+    else
+    {
+        LeaderCheck();
+
+        PrintCenterText( iKiller, "Leveled up! You are now level %d of %d.", iPlayerLevel[iKiller], iMaxLevel );
+        PrintToConsole( iKiller, "%sLeveled up! You are now level %d of %d.", CONSOLE_PREFIX, iPlayerLevel[iKiller], iMaxLevel );
+        EmitSoundToClient( iKiller, SOUND_STINGER1 );
+    }
+
+    if( IsPlayerAlive( iKiller ) )
+    {
+        if( nHealAmount != 0 )
+            SetEntityHealth( iKiller, GetClientHealth( iKiller ) + nHealAmount );
+        CreateTimer( 0.01, Timer_GetDrunk, iKillerUID, TIMER_FLAG_NO_MAPCHANGE );
+    }
+
+    CreateTimer( 0.0, Timer_UpdateEquipment, iKillerUID, TIMER_FLAG_NO_MAPCHANGE );
 }
 public Action:Timer_GetDrunk( Handle:hTimer, any:iUserID )
 {
