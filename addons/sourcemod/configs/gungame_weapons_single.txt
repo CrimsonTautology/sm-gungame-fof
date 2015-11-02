@@ -1,0 +1,11 @@
+"gungame_weapons"
+{
+	"1"
+	{
+		"weapon_walker"	""
+	}
+	"winner"
+	{
+		"weapon_fists_ghost"	""
+	}
+}

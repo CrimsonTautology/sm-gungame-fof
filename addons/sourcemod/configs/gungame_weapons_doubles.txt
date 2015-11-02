@@ -1,0 +1,43 @@
+"gungame_weapons"
+{
+	"1"
+	{
+		"weapon_walker"	"weapon_walker"
+	}
+	"2"
+	{
+		"weapon_peacemaker"	"weapon_peacemaker"
+	}
+	"3"
+	{
+		"weapon_maresleg"	"weapon_maresleg"
+	}
+	"4"
+	{
+		"weapon_schofield"	"weapon_schofield"
+	}
+	"5"
+	{
+		"weapon_volcanic"	"weapon_volcanic"
+	}
+	"6"
+	{
+		"weapon_coltnavy"	"weapon_coltnavy"
+	}
+	"7"
+	{
+		"weapon_sawedoff_shotgun"	"weapon_sawedoff_shotgun"
+	}
+	"8"
+	{
+		"weapon_deringer"	"weapon_deringer"
+	}
+	"9"
+	{
+		"weapon_knife"	""
+	}
+	"winner"
+	{
+		"weapon_rpg"	""
+	}
+}

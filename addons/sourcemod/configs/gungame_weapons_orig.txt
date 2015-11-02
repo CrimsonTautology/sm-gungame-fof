@@ -10,39 +10,39 @@
 	}
 	"3"
 	{
-		"weapon_sharps"	""
+		"weapon_henryrifle"	""
 	}
 	"4"
 	{
-		"weapon_machete"	""
+		"weapon_coachgun"	""
 	}
 	"5"
 	{
-		"weapon_peacemaker"	""
+		"weapon_sharps"	""
 	}
 	"6"
 	{
-		"weapon_coachgun"	""
+		"weapon_machete"	""
 	}
 	"7"
 	{
-		"weapon_henryrifle"	""
+		"weapon_peacemaker"	""
 	}
 	"8"
 	{
-		"weapon_schofield"	""
+		"weapon_maresleg"	""
 	}
 	"9"
 	{
-		"weapon_maresleg"	""
+		"weapon_schofield"	""
 	}
 	"10"
 	{
-		"weapon_carbine"	""
+		"weapon_volcanic"	""
 	}
 	"11"
 	{
-		"weapon_axe"	""
+		"weapon_carbine"	""
 	}
 	"12"
 	{
@@ -50,19 +50,19 @@
 	}
 	"13"
 	{
-		"weapon_volcanic"	""
+		"weapon_sawedoff_shotgun"	""
 	}
 	"14"
 	{
-		"weapon_bow"	""
+		"weapon_deringer"	"weapon_deringer"
 	}
 	"15"
 	{
-		"weapon_deringer"	"weapon_deringer"
+		"weapon_axe"	""
 	}
 	"16"
 	{
-		"weapon_sawedoff_shotgun"	""
+		"weapon_bow"	""
 	}
 	"17"
 	{
@@ -74,6 +74,6 @@
 	}
 	"winner"
 	{
-		"weapon_dynamite"	"weapon_smg1"
+		"weapon_knife"	"weapon_shotgun"
 	}
 }

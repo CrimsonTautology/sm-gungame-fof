@@ -1,0 +1,31 @@
+"gungame_weapons"
+{
+	"1"
+	{
+		"weapon_sharps"	""
+	}
+	"2"
+	{
+		"weapon_carbine"	""
+	}
+	"3"
+	{
+		"weapon_henryrifle"	""
+	}
+	"4"
+	{
+		"weapon_bow"	""
+	}
+	"5"
+	{
+		"weapon_coachgun"	""
+	}
+	"6"
+	{
+		"weapon_schofield"	""
+	}
+	"winner"
+	{
+		"weapon_fists_ghost"	""
+	}
+}
