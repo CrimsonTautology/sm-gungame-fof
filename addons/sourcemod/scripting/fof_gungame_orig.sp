@@ -411,7 +411,8 @@ public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontB
         iPlayerLevel[iVictim]--;
         LeaderCheck();
 
-        PrintCenterTextAll("%N was humiliated by %N and lost a level!", iVictim, iKiller, iPlayerLevel[iVictim], iMaxLevel );
+        PrintCenterTextAll("%N was humiliated by %N and lost a level!", iVictim, iKiller);
+        PrintToConsoleAll( "%N was humiliated by %N and lost a level!", iVictim, iKiller);
         PrintToChat( iVictim, "%sHumiliating death! You are now level %d of %d.", CHAT_PREFIX, iPlayerLevel[iVictim], iMaxLevel );
         EmitSoundToClient( iVictim, SOUND_HUMILIATION );
         EmitSoundToClient( iKiller, SOUND_HUMILIATION );
