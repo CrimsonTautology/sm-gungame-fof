@@ -116,6 +116,7 @@ public OnPluginStart()
     //HookEvent( "player_death", Event_PlayerDeath_Pre, EventHookMode_Pre );
     HookEvent( "player_death", Event_PlayerDeath );
     HookEvent( "player_death", Event_PlayerDeathPost, EventHookMode_Post);
+    HookEvent("round_start", Event_RoundStart);
 
     RegAdminCmd( "fof_gungame_restart", Command_RestartRound, ADMFLAG_GENERIC );
     RegAdminCmd( "fof_gungame_reload_cfg", Command_ReloadConfigFile, ADMFLAG_CONFIG );
@@ -555,6 +556,11 @@ public Action:Event_PlayerDeathPost(Handle:event, const String:name[], bool:dont
     if(0 < assist <= MaxClients) SetClientNotoriety(assist, iPlayerLevel[assist]);
 }
 
+public Event_RoundStart(Event:event, const String:name[], bool:dontBroadcast)
+{
+    RemoveCrates();
+}
+
 public Action:Hook_OnTakeDamage( iVictim, &iAttacker, &iInflictor, &Float:flDamage, &iDmgType, &iWeapon, Float:vecDmgForce[3], Float:vecDmgPosition[3], iDmgCustom )
 {
     //TODO
@@ -720,8 +726,6 @@ public Action:Timer_RespawnPlayers( Handle:hTimer )
     iEntity = INVALID_ENT_REFERENCE;
     while( ( iEntity = FindEntityByClassname( iEntity, "dynamite*" ) ) != INVALID_ENT_REFERENCE )
         AcceptEntityInput( iEntity, "Kill" );
-
-    RemoveCrates();
 
     for( new iClient = 1; iClient <= MaxClients; iClient++ )
         if( IsClientInGame( iClient ) )
@@ -1253,5 +1257,5 @@ SetClientNotoriety(client, notoriety)
 {
     //SetEntProp(client, Prop_Data, "m_iFrags", 1); //TODO
     SetEntProp(client, Prop_Send, "m_nLastRoundNotoriety", notoriety);
-    AcceptEntityInput(g_GameScore, "ApplyScore", client, g_GameScore);
+    //AcceptEntityInput(g_GameScore, "ApplyScore", client, g_GameScore);
 }
