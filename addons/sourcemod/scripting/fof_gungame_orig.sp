@@ -170,6 +170,22 @@ public OnMapStart()
         SetFailState( "Missing mp_teamplay or/and fof_sv_currentmode console variable" );
 
     fof_teamplay = INVALID_ENT_REFERENCE;
+    g_GameScore = INVALID_ENT_REFERENCE;
+
+    iWinner = 0;
+    szWinner[0] = '\0';
+    iLeader = 0;
+    iMaxLevel = 1;
+    for( new i = 0; i < sizeof( iPlayerLevel ); i++ )
+    {
+        iPlayerLevel[i] = 1;
+        flLastKill[i] = 0.0;
+        flLastLevelUP[i] = 0.0;
+        flLastUse[i] = 0.0;
+        flStart[i] = 0.0;
+        bWasInTheLead[i] = false;
+        bInTheLead[i] = false;
+    }
 
     PrecacheSound( SOUND_STINGER1, true );
     PrecacheSound( SOUND_STINGER2, true );
@@ -530,6 +546,7 @@ public Action:Event_PlayerDeathPost(Handle:event, const String:name[], bool:dont
 
 public Event_RoundStart(Event:event, const String:name[], bool:dontBroadcast)
 {
+    PrintToConsole(0, "Hit Event_RoundStart");
     RemoveCrates();
 
     //Create a game_score entity to modify notoriety
@@ -540,7 +557,6 @@ public Event_RoundStart(Event:event, const String:name[], bool:dontBroadcast)
     iWinner = 0;
     szWinner[0] = '\0';
     iLeader = 0;
-    iMaxLevel = 1;
     for( new i = 0; i < sizeof( iPlayerLevel ); i++ )
     {
         iPlayerLevel[i] = 1;
@@ -1249,5 +1265,9 @@ SetClientNotoriety(client, notoriety)
 {
     //SetEntProp(client, Prop_Data, "m_iFrags", 1); //TODO
     SetEntProp(client, Prop_Send, "m_nLastRoundNotoriety", notoriety);
-    AcceptEntityInput(g_GameScore, "ApplyScore", client, g_GameScore);
+    if(g_GameScore != INVALID_ENT_REFERENCE)
+    {
+        AcceptEntityInput(g_GameScore, "ApplyScore", client, g_GameScore);
+        PrintToConsole(0, " - Hit ApplyScore");//TODO
+    }
 }
