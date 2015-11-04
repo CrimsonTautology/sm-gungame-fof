@@ -171,21 +171,6 @@ public OnMapStart()
 
     fof_teamplay = INVALID_ENT_REFERENCE;
 
-    iWinner = 0;
-    szWinner[0] = '\0';
-    iLeader = 0;
-    iMaxLevel = 1;
-    for( new i = 0; i < sizeof( iPlayerLevel ); i++ )
-    {
-        iPlayerLevel[i] = 1;
-        flLastKill[i] = 0.0;
-        flLastLevelUP[i] = 0.0;
-        flLastUse[i] = 0.0;
-        flStart[i] = 0.0;
-        bWasInTheLead[i] = false;
-        bInTheLead[i] = false;
-    }
-
     PrecacheSound( SOUND_STINGER1, true );
     PrecacheSound( SOUND_STINGER2, true );
     PrecacheSound( SOUND_FIGHT, true );
@@ -550,6 +535,22 @@ public Event_RoundStart(Event:event, const String:name[], bool:dontBroadcast)
     //Create a game_score entity to modify notoriety
     g_GameScore = CreateEntityByName("game_score");
     DispatchSpawn(g_GameScore);
+
+    //Clear scores
+    iWinner = 0;
+    szWinner[0] = '\0';
+    iLeader = 0;
+    iMaxLevel = 1;
+    for( new i = 0; i < sizeof( iPlayerLevel ); i++ )
+    {
+        iPlayerLevel[i] = 1;
+        flLastKill[i] = 0.0;
+        flLastLevelUP[i] = 0.0;
+        flLastUse[i] = 0.0;
+        flStart[i] = 0.0;
+        bWasInTheLead[i] = false;
+        bInTheLead[i] = false;
+    }
 }
 
 public Action:Hook_OnTakeDamage( iVictim, &iAttacker, &iInflictor, &Float:flDamage, &iDmgType, &iWeapon, Float:vecDmgForce[3], Float:vecDmgPosition[3], iDmgCustom )
