@@ -141,8 +141,6 @@ public OnPluginStart()
 
         RestartTheGame();
     }
-
-    //HookEntityOutput( "logic_auto", "OnMapSpawn", Output_OnMapSpawn );
 }
 
 public OnPluginEnd()
@@ -197,13 +195,6 @@ public OnMapStart()
     PrecacheSound( SOUND_TIEDLEAD, true );
 
     CreateTimer( 1.0, Timer_UpdateHUD, .flags = TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE );
-}
-
-public Output_OnMapSpawn( const String:szOutput[], iCaller, iActivator, Float:flDelay )
-{
-	new iCrate = INVALID_ENT_REFERENCE;
-	while( ( iCrate = FindEntityByClassname( iCrate, "fof_crate*" ) ) != INVALID_ENT_REFERENCE )
-		AcceptEntityInput( iCrate, "Kill" );
 }
 
 RemoveCrates()
