@@ -173,10 +173,6 @@ public OnMapStart()
 
     fof_teamplay = INVALID_ENT_REFERENCE;
 
-    //Create a game_score entity to modify notoriety
-    g_GameScore = CreateEntityByName("game_score");
-    DispatchSpawn(g_GameScore);
-
     iWinner = 0;
     szWinner[0] = '\0';
     iLeader = 0;
@@ -559,6 +555,10 @@ public Action:Event_PlayerDeathPost(Handle:event, const String:name[], bool:dont
 public Event_RoundStart(Event:event, const String:name[], bool:dontBroadcast)
 {
     RemoveCrates();
+
+    //Create a game_score entity to modify notoriety
+    g_GameScore = CreateEntityByName("game_score");
+    DispatchSpawn(g_GameScore);
 }
 
 public Action:Hook_OnTakeDamage( iVictim, &iAttacker, &iInflictor, &Float:flDamage, &iDmgType, &iWeapon, Float:vecDmgForce[3], Float:vecDmgPosition[3], iDmgCustom )
@@ -1257,5 +1257,5 @@ SetClientNotoriety(client, notoriety)
 {
     //SetEntProp(client, Prop_Data, "m_iFrags", 1); //TODO
     SetEntProp(client, Prop_Send, "m_nLastRoundNotoriety", notoriety);
-    //AcceptEntityInput(g_GameScore, "ApplyScore", client, g_GameScore);
+    AcceptEntityInput(g_GameScore, "ApplyScore", client, g_GameScore);
 }
