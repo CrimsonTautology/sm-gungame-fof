@@ -75,6 +75,8 @@ new Float:flStart[MAXPLAYERS+1];
 new bool:bInTheLead[MAXPLAYERS+1];
 new bool:bWasInTheLead[MAXPLAYERS+1];
 
+new g_GameScore = INVALID_ENT_REFERENCE;
+
 public Plugin:myinfo =
 {
 	name = "[FoF] Gun Game",
@@ -161,39 +163,43 @@ public OnClientDisconnect_Post( iClient )
 
 public OnMapStart()
 {
-	new Handle:mp_teamplay = FindConVar( "mp_teamplay" );
-	new Handle:fof_sv_currentmode = FindConVar( "fof_sv_currentmode" );
-	if( mp_teamplay != INVALID_HANDLE && fof_sv_currentmode != INVALID_HANDLE )
-		bDeathmatch = ( GetConVarInt( mp_teamplay ) == 0 && GetConVarInt( fof_sv_currentmode ) == 1 );
-	else
-		SetFailState( "Missing mp_teamplay or/and fof_sv_currentmode console variable" );
-	
-	fof_teamplay = INVALID_ENT_REFERENCE;
-	
-	iWinner = 0;
-	szWinner[0] = '\0';
-	iLeader = 0;
-	iMaxLevel = 1;
-	for( new i = 0; i < sizeof( iPlayerLevel ); i++ )
-	{
-		iPlayerLevel[i] = 1;
-		flLastKill[i] = 0.0;
-		flLastLevelUP[i] = 0.0;
-		flLastUse[i] = 0.0;
-		flStart[i] = 0.0;
-		bWasInTheLead[i] = false;
-		bInTheLead[i] = false;
-	}
-	
-	PrecacheSound( SOUND_STINGER1, true );
-	PrecacheSound( SOUND_STINGER2, true );
-	PrecacheSound( SOUND_FIGHT, true );
-	PrecacheSound( SOUND_HUMILIATION, true );
-	PrecacheSound( SOUND_LOSTLEAD, true );
-	PrecacheSound( SOUND_TAKENLEAD, true );
-	PrecacheSound( SOUND_TIEDLEAD, true );
-	
-	CreateTimer( 1.0, Timer_UpdateHUD, .flags = TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE );
+    new Handle:mp_teamplay = FindConVar( "mp_teamplay" );
+    new Handle:fof_sv_currentmode = FindConVar( "fof_sv_currentmode" );
+    if( mp_teamplay != INVALID_HANDLE && fof_sv_currentmode != INVALID_HANDLE )
+        bDeathmatch = ( GetConVarInt( mp_teamplay ) == 0 && GetConVarInt( fof_sv_currentmode ) == 1 );
+    else
+        SetFailState( "Missing mp_teamplay or/and fof_sv_currentmode console variable" );
+
+    fof_teamplay = INVALID_ENT_REFERENCE;
+
+    //Create a game_score entity to modify notoriety
+    g_GameScore = CreateEntityByName("game_score");
+    DispatchSpawn(g_GameScore);
+
+    iWinner = 0;
+    szWinner[0] = '\0';
+    iLeader = 0;
+    iMaxLevel = 1;
+    for( new i = 0; i < sizeof( iPlayerLevel ); i++ )
+    {
+        iPlayerLevel[i] = 1;
+        flLastKill[i] = 0.0;
+        flLastLevelUP[i] = 0.0;
+        flLastUse[i] = 0.0;
+        flStart[i] = 0.0;
+        bWasInTheLead[i] = false;
+        bInTheLead[i] = false;
+    }
+
+    PrecacheSound( SOUND_STINGER1, true );
+    PrecacheSound( SOUND_STINGER2, true );
+    PrecacheSound( SOUND_FIGHT, true );
+    PrecacheSound( SOUND_HUMILIATION, true );
+    PrecacheSound( SOUND_LOSTLEAD, true );
+    PrecacheSound( SOUND_TAKENLEAD, true );
+    PrecacheSound( SOUND_TIEDLEAD, true );
+
+    CreateTimer( 1.0, Timer_UpdateHUD, .flags = TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE );
 }
 
 public Output_OnMapSpawn( const String:szOutput[], iCaller, iActivator, Float:flDelay )
@@ -316,8 +322,7 @@ public Event_PlayerActivate( Handle:hEvent, const String:szEventName[], bool:bDo
 	if( 0 < iClient <= MaxClients )
 	{
         iPlayerLevel[ iClient ] = 1;
-        //SetEntProp(iClient, Prop_Data, "m_iFrags", 1); //TODO
-        SetEntProp(iClient, Prop_Send, "m_nLastRoundNotoriety", iPlayerLevel[iClient]); //TODO
+        SetClientNotoriety(iClient, iPlayerLevel[iClient]);//TODO
         flLastKill[ iClient ] = 0.0;
         flLastLevelUP[ iClient ] = 0.0;
         flLastUse[ iClient ] = 0.0;
@@ -545,16 +550,16 @@ public Action:Event_PlayerDeathPost(Handle:event, const String:name[], bool:dont
     new assist = GetClientOfUserId(GetEventInt(event, "assist"));
 
     //TODO
-    if(0 < victim <= MaxClients) SetEntProp(victim, Prop_Send, "m_nLastRoundNotoriety", iPlayerLevel[victim]);
-    if(0 < killer <= MaxClients) SetEntProp(killer, Prop_Send, "m_nLastRoundNotoriety", iPlayerLevel[killer]);
-    if(0 < assist <= MaxClients) SetEntProp(assist, Prop_Send, "m_nLastRoundNotoriety", iPlayerLevel[assist]);
+    if(0 < victim <= MaxClients) SetClientNotoriety(victim, iPlayerLevel[victim]);
+    if(0 < killer <= MaxClients) SetClientNotoriety(killer, iPlayerLevel[killer]);
+    if(0 < assist <= MaxClients) SetClientNotoriety(assist, iPlayerLevel[assist]);
 }
 
 public Action:Hook_OnTakeDamage( iVictim, &iAttacker, &iInflictor, &Float:flDamage, &iDmgType, &iWeapon, Float:vecDmgForce[3], Float:vecDmgPosition[3], iDmgCustom )
 {
     //TODO
-    if(0 < iVictim <= MaxClients) SetEntProp(iVictim, Prop_Send, "m_nLastRoundNotoriety", iPlayerLevel[iVictim]);
-    if(0 < iAttacker <= MaxClients) SetEntProp(iAttacker, Prop_Send, "m_nLastRoundNotoriety", iPlayerLevel[iAttacker]);
+    if(0 < iVictim <= MaxClients) SetClientNotoriety(iVictim, iPlayerLevel[iVictim]);
+    if(0 < iAttacker <= MaxClients) SetClientNotoriety(iAttacker, iPlayerLevel[iAttacker]);
 
     if( 0 < iVictim <= MaxClients && IsClientInGame( iVictim ) )
     {
@@ -680,8 +685,7 @@ public Action:Timer_RespawnPlayers( Handle:hTimer )
             bUpdateEquipment[i] = true;
             bWasInGame[i] = GetClientTeam( i ) != 1;
             flStart[i] = GetGameTime();
-            //SetEntProp(i, Prop_Data, "m_iFrags", 1); //TODO
-            SetEntProp(i, Prop_Send, "m_nLastRoundNotoriety", iPlayerLevel[i]); //TODO
+            SetClientNotoriety(i, iPlayerLevel[i]);
         }
         ExtinguishClient( i );
     }
@@ -1243,4 +1247,11 @@ public Action:Command_DumpScores(caller, args)
                 client);
     }
     return Plugin_Handled;
+}
+
+SetClientNotoriety(client, notoriety)
+{
+    //SetEntProp(client, Prop_Data, "m_iFrags", 1); //TODO
+    SetEntProp(client, Prop_Send, "m_nLastRoundNotoriety", notoriety);
+    AcceptEntityInput(g_GameScore, "ApplyScore", client, g_GameScore);
 }
