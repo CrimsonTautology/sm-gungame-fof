@@ -75,8 +75,6 @@ new Float:flStart[MAXPLAYERS+1];
 new bool:bInTheLead[MAXPLAYERS+1];
 new bool:bWasInTheLead[MAXPLAYERS+1];
 
-new g_GameScore = INVALID_ENT_REFERENCE;
-
 public Plugin:myinfo =
 {
 	name = "[FoF] Gun Game",
@@ -170,7 +168,6 @@ public OnMapStart()
         SetFailState( "Missing mp_teamplay or/and fof_sv_currentmode console variable" );
 
     fof_teamplay = INVALID_ENT_REFERENCE;
-    g_GameScore = INVALID_ENT_REFERENCE;
 
     iWinner = 0;
     szWinner[0] = '\0';
@@ -312,7 +309,6 @@ public Event_PlayerActivate( Handle:hEvent, const String:szEventName[], bool:bDo
 	if( 0 < iClient <= MaxClients )
 	{
         iPlayerLevel[ iClient ] = 1;
-        //SetClientNotoriety(iClient, iPlayerLevel[iClient]);//TODO
         flLastKill[ iClient ] = 0.0;
         flLastLevelUP[ iClient ] = 0.0;
         flLastUse[ iClient ] = 0.0;
@@ -538,20 +534,11 @@ public Action:Event_PlayerDeathPost(Handle:event, const String:name[], bool:dont
     new victim = GetClientOfUserId(GetEventInt(event, "userid"));
     new killer = GetClientOfUserId(GetEventInt(event, "attacker"));
     new assist = GetClientOfUserId(GetEventInt(event, "assist"));
-
-    //TODO
-    //if(0 < victim <= MaxClients) SetClientNotoriety(victim, iPlayerLevel[victim]);
-    //if(0 < killer <= MaxClients) SetClientNotoriety(killer, iPlayerLevel[killer]);
-    //if(0 < assist <= MaxClients) SetClientNotoriety(assist, iPlayerLevel[assist]);
 }
 
 public Event_RoundStart(Event:event, const String:name[], bool:dontBroadcast)
 {
     RemoveCrates();
-
-    //Create a game_score entity to modify notoriety
-    g_GameScore = CreateEntityByName("game_score");
-    DispatchSpawn(g_GameScore);
 
     //Clear scores
     iWinner = 0;
@@ -571,10 +558,6 @@ public Event_RoundStart(Event:event, const String:name[], bool:dontBroadcast)
 
 public Action:Hook_OnTakeDamage( iVictim, &iAttacker, &iInflictor, &Float:flDamage, &iDmgType, &iWeapon, Float:vecDmgForce[3], Float:vecDmgPosition[3], iDmgCustom )
 {
-    //TODO
-    //if(0 < iVictim <= MaxClients) SetClientNotoriety(iVictim, iPlayerLevel[iVictim]);
-    //if(0 < iAttacker <= MaxClients) SetClientNotoriety(iAttacker, iPlayerLevel[iAttacker]);
-
     if( 0 < iVictim <= MaxClients && IsClientInGame( iVictim ) )
     {
         //PrintToChat( iVictim, "cid#%d: dmgtype: %d, killer: %d (%d), dmg: %f, wpn: %d", iVictim, iDmgType, iAttacker, iInflictor, flDamage, iWeapon );
@@ -699,7 +682,6 @@ public Action:Timer_RespawnPlayers( Handle:hTimer )
             bUpdateEquipment[i] = true;
             bWasInGame[i] = GetClientTeam( i ) != 1;
             flStart[i] = GetGameTime();
-            //SetClientNotoriety(i, iPlayerLevel[i]);
         }
     }
 
@@ -1240,14 +1222,4 @@ public Action:Command_DumpScores(caller, args)
                 client);
     }
     return Plugin_Handled;
-}
-
-SetClientNotoriety(client, notoriety)
-{
-    //SetEntProp(client, Prop_Data, "m_iFrags", 1); //TODO
-    SetEntProp(client, Prop_Send, "m_nLastRoundNotoriety", notoriety);
-    if(g_GameScore != INVALID_ENT_REFERENCE)
-    {
-        AcceptEntityInput(g_GameScore, "ApplyScore", client, g_GameScore);
-    }
 }
