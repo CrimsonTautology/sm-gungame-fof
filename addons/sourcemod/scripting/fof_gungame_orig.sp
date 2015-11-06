@@ -485,10 +485,9 @@ public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontB
             {
                 iPlayerLevel[i] = 1;
                 flStart[i] = 0.0;
+                if( IsClientInGame( i ) )
+                    CreateTimer( 0.0, Timer_UpdateEquipment, GetClientUserId( i ), TIMER_FLAG_NO_MAPCHANGE );
             }
-            if( IsClientInGame( i ) )
-                CreateTimer( 0.0, Timer_UpdateEquipment, GetClientUserId( i ), TIMER_FLAG_NO_MAPCHANGE );
-                //TODO don't call this on winner?
         }
 
         CreateTimer( 3.0, Timer_RespawnAnnounce, .flags = TIMER_FLAG_NO_MAPCHANGE );
@@ -522,10 +521,10 @@ public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontB
 }
 public Action:Timer_GetDrunk( Handle:hTimer, any:iUserID )
 {
-	new iClient = GetClientOfUserId( iUserID );
-	if( flDrunkness != 0.0 && 0 < iClient <= MaxClients && IsClientInGame( iClient ) && IsPlayerAlive( iClient ) )
-		SetEntPropFloat( iClient, Prop_Send, "m_flDrunkness", FloatMax( 0.0, GetEntPropFloat( iClient, Prop_Send, "m_flDrunkness" ) + flDrunkness ) );
-	return Plugin_Stop;
+    new iClient = GetClientOfUserId( iUserID );
+    if( flDrunkness != 0.0 && 0 < iClient <= MaxClients && IsClientInGame( iClient ) && IsPlayerAlive( iClient ) )
+        SetEntPropFloat( iClient, Prop_Send, "m_flDrunkness", FloatMax( 0.0, GetEntPropFloat( iClient, Prop_Send, "m_flDrunkness" ) + flDrunkness ) );
+    return Plugin_Stop;
 }
 
 public Event_RoundStart(Event:event, const String:name[], bool:dontBroadcast)
@@ -638,17 +637,17 @@ public Hook_WeaponSwitchPost( iClient, iWeapon )
 
 public Action:Timer_RespawnAnnounce( Handle:hTimer, any:iUserID )
 {
-	CreateTimer( flBonusRoundTime, Timer_RespawnPlayers, .flags = TIMER_FLAG_NO_MAPCHANGE );
-	CreateTimer( FloatMax( 0.0, ( flBonusRoundTime - 1.0 ) ), Timer_AllowMapEnd, .flags = TIMER_FLAG_NO_MAPCHANGE );
-	if( flBonusRoundTime >= 1.0 )
-		PrintToChatAll( "%sStarting new round in %d seconds...", CHAT_PREFIX, RoundToCeil( flBonusRoundTime ) );
-	return Plugin_Stop;
+    CreateTimer( flBonusRoundTime, Timer_RespawnPlayers, .flags = TIMER_FLAG_NO_MAPCHANGE );
+    CreateTimer( FloatMax( 0.0, ( flBonusRoundTime - 1.0 ) ), Timer_AllowMapEnd, .flags = TIMER_FLAG_NO_MAPCHANGE );
+    if( flBonusRoundTime >= 1.0 )
+        PrintToChatAll( "%sStarting new round in %d seconds...", CHAT_PREFIX, RoundToCeil( flBonusRoundTime ) );
+    return Plugin_Stop;
 }
 
 public Action:Timer_AllowMapEnd( Handle:hTimer, any:iUserID )
 {
-	AllowMapEnd( true );
-	return Plugin_Stop;
+    AllowMapEnd( true );
+    return Plugin_Stop;
 }
 
 public Action:Timer_RespawnPlayers( Handle:hTimer )
@@ -700,486 +699,486 @@ public Action:Timer_RespawnPlayers( Handle:hTimer )
 
 public Action:Timer_RespawnPlayers_Fix( Handle:hTimer )
 {
-	AllowMapEnd( false );
-	
-	for( new i = 1; i <= MaxClients; i++ )
+    AllowMapEnd( false );
+
+    for( new i = 1; i <= MaxClients; i++ )
     {
-		if( IsClientInGame( i ) )
-		{
-			if( bWasInGame[i] && GetClientTeam( i ) == 1 )
-				FakeClientCommand( i, "autojoin" );
-			else if( bWasInGame[i] && !IsPlayerAlive( i ) )
-				PrintToServer( "%sPlayer %L is still dead!", CONSOLE_PREFIX, i );
-			else if( bUpdateEquipment[i] )
-				Timer_UpdateEquipment( INVALID_HANDLE, GetClientUserId( i ) );
-		}
+        if( IsClientInGame( i ) )
+        {
+            if( bWasInGame[i] && GetClientTeam( i ) == 1 )
+                FakeClientCommand( i, "autojoin" );
+            else if( bWasInGame[i] && !IsPlayerAlive( i ) )
+                PrintToServer( "%sPlayer %L is still dead!", CONSOLE_PREFIX, i );
+            else if( bUpdateEquipment[i] )
+                Timer_UpdateEquipment( INVALID_HANDLE, GetClientUserId( i ) );
+        }
     }
-	
-	new timeleft;
-	if( GetMapTimeLeft( timeleft ) && timeleft > 0 )
-		EmitSoundToAll( SOUND_FIGHT);
-	
-	return Plugin_Stop;
+
+    new timeleft;
+    if( GetMapTimeLeft( timeleft ) && timeleft > 0 )
+        EmitSoundToAll( SOUND_FIGHT);
+
+    return Plugin_Stop;
 }
 
 public Action:Timer_UpdateEquipment( Handle:hTimer, any:iUserID )
 {
-	new iClient = GetClientOfUserId( iUserID );
-	if( !( 0 < iClient <= MaxClients && IsClientInGame( iClient ) && IsPlayerAlive( iClient ) ) )
-		return Plugin_Stop;
-	
-	bUpdateEquipment[iClient] = false;
-	
-	if( iWinner == iClient )
-		SetEntityHealth( iClient, 500 );
-	else
-	{
-		UseWeapon( iClient, "weapon_fists" );
-		StripWeapons( iClient );
-	}
-	
-	if( iWinner > 0 && iClient != iWinner )
-	{
-		WriteLog( "Timer_GiveWeapon(%d): Updating the loadout. Level #%d, fists only (looser).", iClient, iPlayerLevel[iClient] );
-	}
-	else
-	{
-		new String:szPlayerLevel[16];
-		if( iWinner > 0 && iClient == iWinner )
-			strcopy( szPlayerLevel, sizeof( szPlayerLevel ), "winner" );
-		else
-			IntToString( iPlayerLevel[iClient], szPlayerLevel, sizeof( szPlayerLevel ) );
-		
-		new String:szPlayerWeapon[2][32];
-		KvRewind( hWeapons );
-		if( KvJumpToKey( hWeapons, szPlayerLevel ) && KvGotoFirstSubKey( hWeapons, false ) )
-		{
-			KvGetSectionName( hWeapons, szPlayerWeapon[0], sizeof( szPlayerWeapon[] ) );
-			KvGoBack( hWeapons );
-			KvGetString( hWeapons, szPlayerWeapon[0], szPlayerWeapon[1], sizeof( szPlayerWeapon[] ) );
-			KvGoBack( hWeapons );
-			if( StrEqual( szPlayerWeapon[0], szPlayerWeapon[1] ) )
-				Format( szPlayerWeapon[1], sizeof( szPlayerWeapon[] ), "%s2", szPlayerWeapon[0] );
-		}
-		
-		if( szPlayerWeapon[0][0] == '\0' && szPlayerWeapon[1][0] == '\0' )
-		{
-			if( iClient != iWinner )
-			{
-				LogError( "Missing weapon for level %d!", iPlayerLevel[iClient] );
-				WriteLog( "Timer_GiveWeapon(%d): Updating the loadout. Level #%d, fists only (missing loadout).", iClient, iPlayerLevel[iClient] );
-			}
-			return Plugin_Stop;
-		}
-		
-		new Handle:hPack1;
-		CreateDataTimer( flEquipDelay + 0.20, Timer_GiveWeapon, hPack1, TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE );
-		WritePackCell( hPack1, iUserID );
-		WritePackString( hPack1, szPlayerWeapon[0] );
-		
-		new Handle:hPack2;
-		CreateDataTimer( flEquipDelay + 0.32, Timer_GiveWeapon, hPack2, TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE );
-		WritePackCell( hPack2, iUserID );
-		WritePackString( hPack2, szPlayerWeapon[1] );
-		
-		WriteLog( "Timer_GiveWeapon(%d): Updating the loadout. Level #%d, weapon1: '%s', weapon2: '%s'%s.", iClient, iPlayerLevel[iClient], szPlayerWeapon[0], szPlayerWeapon[1], iClient == iWinner ? " (winner)" : "" );
-	}
-	
-	return Plugin_Stop;
+    new iClient = GetClientOfUserId( iUserID );
+    if( !( 0 < iClient <= MaxClients && IsClientInGame( iClient ) && IsPlayerAlive( iClient ) ) )
+        return Plugin_Stop;
+
+    bUpdateEquipment[iClient] = false;
+
+    if( iWinner == iClient )
+        SetEntityHealth( iClient, 500 );
+    else
+    {
+        UseWeapon( iClient, "weapon_fists" );
+        StripWeapons( iClient );
+    }
+
+    if( iWinner > 0 && iClient != iWinner )
+    {
+        WriteLog( "Timer_GiveWeapon(%d): Updating the loadout. Level #%d, fists only (looser).", iClient, iPlayerLevel[iClient] );
+    }
+    else
+    {
+        new String:szPlayerLevel[16];
+        if( iWinner > 0 && iClient == iWinner )
+            strcopy( szPlayerLevel, sizeof( szPlayerLevel ), "winner" );
+        else
+            IntToString( iPlayerLevel[iClient], szPlayerLevel, sizeof( szPlayerLevel ) );
+
+        new String:szPlayerWeapon[2][32];
+        KvRewind( hWeapons );
+        if( KvJumpToKey( hWeapons, szPlayerLevel ) && KvGotoFirstSubKey( hWeapons, false ) )
+        {
+            KvGetSectionName( hWeapons, szPlayerWeapon[0], sizeof( szPlayerWeapon[] ) );
+            KvGoBack( hWeapons );
+            KvGetString( hWeapons, szPlayerWeapon[0], szPlayerWeapon[1], sizeof( szPlayerWeapon[] ) );
+            KvGoBack( hWeapons );
+            if( StrEqual( szPlayerWeapon[0], szPlayerWeapon[1] ) )
+                Format( szPlayerWeapon[1], sizeof( szPlayerWeapon[] ), "%s2", szPlayerWeapon[0] );
+        }
+
+        if( szPlayerWeapon[0][0] == '\0' && szPlayerWeapon[1][0] == '\0' )
+        {
+            if( iClient != iWinner )
+            {
+                LogError( "Missing weapon for level %d!", iPlayerLevel[iClient] );
+                WriteLog( "Timer_GiveWeapon(%d): Updating the loadout. Level #%d, fists only (missing loadout).", iClient, iPlayerLevel[iClient] );
+            }
+            return Plugin_Stop;
+        }
+
+        new Handle:hPack1;
+        CreateDataTimer( flEquipDelay + 0.20, Timer_GiveWeapon, hPack1, TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE );
+        WritePackCell( hPack1, iUserID );
+        WritePackString( hPack1, szPlayerWeapon[0] );
+
+        new Handle:hPack2;
+        CreateDataTimer( flEquipDelay + 0.32, Timer_GiveWeapon, hPack2, TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE );
+        WritePackCell( hPack2, iUserID );
+        WritePackString( hPack2, szPlayerWeapon[1] );
+
+        WriteLog( "Timer_GiveWeapon(%d): Updating the loadout. Level #%d, weapon1: '%s', weapon2: '%s'%s.", iClient, iPlayerLevel[iClient], szPlayerWeapon[0], szPlayerWeapon[1], iClient == iWinner ? " (winner)" : "" );
+    }
+
+    return Plugin_Stop;
 }
 
 public Action:Timer_GiveWeapon( Handle:hTimer, Handle:hPack )
 {
-	ResetPack( hPack );
-	
-	new iUserID = ReadPackCell( hPack );
-	new iClient = GetClientOfUserId( iUserID );
-	if( !( 0 < iClient <= MaxClients && IsClientInGame( iClient ) && IsPlayerAlive( iClient ) ) )
-		return Plugin_Stop;
-	
-	new String:szWeapon[32];
-	ReadPackString( hPack, szWeapon, sizeof( szWeapon ) );
-	if( szWeapon[0] == '\0' )
-		return Plugin_Stop;
-	
-	WriteLog( "Timer_GiveWeapon(%d): %L", iClient, iClient );
-	
-	new iWeapon;
-	if( ( iWeapon = GivePlayerItem( iClient, szWeapon ) ) > MaxClients )
-	{
-		WriteLog( "Timer_GiveWeapon(%d): generated %s/%d", iClient, szWeapon, iWeapon );
-		
-		if( StrContains( szWeapon, "weapon_dynamite" ) == 0 )
-			SetAmmo( iClient, iWeapon, 100 );
-		else if( StrEqual( szWeapon, "weapon_knife" ) )
-			SetAmmo( iClient, iWeapon, 2 );
-		else if( StrEqual( szWeapon, "weapon_axe" ) || StrEqual( szWeapon, "weapon_machete" ) )
-			SetAmmo( iClient, iWeapon, 1 );
-		
-		new Handle:hPack1;
-		CreateDataTimer( 0.1, Timer_UseWeapon, hPack1, TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE );
-		WritePackCell( hPack1, iUserID );
-		WritePackString( hPack1, szWeapon );
-	}
-	else
-	{
-		WriteLog( "Timer_GiveWeapon(%d): failed to generate '%s'", iClient, szWeapon );
-		LogError( "Failed to generate %s", szWeapon );
-	}
-	
-	WriteLog( "Timer_GiveWeapon(%d): end", iClient );
-	return Plugin_Stop;
+    ResetPack( hPack );
+
+    new iUserID = ReadPackCell( hPack );
+    new iClient = GetClientOfUserId( iUserID );
+    if( !( 0 < iClient <= MaxClients && IsClientInGame( iClient ) && IsPlayerAlive( iClient ) ) )
+        return Plugin_Stop;
+
+    new String:szWeapon[32];
+    ReadPackString( hPack, szWeapon, sizeof( szWeapon ) );
+    if( szWeapon[0] == '\0' )
+        return Plugin_Stop;
+
+    WriteLog( "Timer_GiveWeapon(%d): %L", iClient, iClient );
+
+    new iWeapon;
+    if( ( iWeapon = GivePlayerItem( iClient, szWeapon ) ) > MaxClients )
+    {
+        WriteLog( "Timer_GiveWeapon(%d): generated %s/%d", iClient, szWeapon, iWeapon );
+
+        if( StrContains( szWeapon, "weapon_dynamite" ) == 0 )
+            SetAmmo( iClient, iWeapon, 100 );
+        else if( StrEqual( szWeapon, "weapon_knife" ) )
+            SetAmmo( iClient, iWeapon, 2 );
+        else if( StrEqual( szWeapon, "weapon_axe" ) || StrEqual( szWeapon, "weapon_machete" ) )
+            SetAmmo( iClient, iWeapon, 1 );
+
+        new Handle:hPack1;
+        CreateDataTimer( 0.1, Timer_UseWeapon, hPack1, TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE );
+        WritePackCell( hPack1, iUserID );
+        WritePackString( hPack1, szWeapon );
+    }
+    else
+    {
+        WriteLog( "Timer_GiveWeapon(%d): failed to generate '%s'", iClient, szWeapon );
+        LogError( "Failed to generate %s", szWeapon );
+    }
+
+    WriteLog( "Timer_GiveWeapon(%d): end", iClient );
+    return Plugin_Stop;
 }
 
 public Action:Timer_UseWeapon( Handle:hTimer, Handle:hPack )
 {
-	ResetPack( hPack );
-	
-	new iClient = GetClientOfUserId( ReadPackCell( hPack ) );
-	if( !( 0 < iClient <= MaxClients && IsClientInGame( iClient ) && IsPlayerAlive( iClient ) ) )
-		return Plugin_Stop;
-	
-	new String:szWeapon[32];
-	ReadPackString( hPack, szWeapon, sizeof( szWeapon ) );
-	if( szWeapon[0] == '\0' )
-		return Plugin_Stop;
-	
-	UseWeapon( iClient, szWeapon );
-	return Plugin_Stop;
+    ResetPack( hPack );
+
+    new iClient = GetClientOfUserId( ReadPackCell( hPack ) );
+    if( !( 0 < iClient <= MaxClients && IsClientInGame( iClient ) && IsPlayerAlive( iClient ) ) )
+        return Plugin_Stop;
+
+    new String:szWeapon[32];
+    ReadPackString( hPack, szWeapon, sizeof( szWeapon ) );
+    if( szWeapon[0] == '\0' )
+        return Plugin_Stop;
+
+    UseWeapon( iClient, szWeapon );
+    return Plugin_Stop;
 }
 
 public Action:Timer_UpdateHUD( Handle:hTimer, any:iUnused )
 {
-	new iTopLevel = 0, iClients[MaxClients+1], nClients = 0;
-	if( iWinner <= 0 )
-	{
-		for( new i = 1; i <= MaxClients; i++ )
-			if( IsClientInGame( i ) && iPlayerLevel[i] > iTopLevel )
-				iTopLevel = iPlayerLevel[i];
-		
-		for( new i = 1; i <= MaxClients; i++ )
-			if( IsClientInGame( i ) && iPlayerLevel[i] >= iTopLevel && GetClientTeam( i ) != 1 )
-				iClients[nClients++] = i;
-	}
-	
-	for( new i = 1; i <= MaxClients; i++ )
-		if( IsClientInGame( i ) )
-		{
-			ClearSyncHud( i, hHUDSync1 );
-			ClearSyncHud( i, hHUDSync2 );
-			
-			if( iWinner > 0 )
-			{
-				if( nClients == iWinner )
-				{
-					SetHudTextParams( HUD1_X, HUD1_Y, 1.125, 0, 255, 0, 180, 0, 0.0, 0.0, 0.0 );
-					_ShowHudText( i, hHUDSync1, "YOU ARE THE WINNER" );
-				}
-				else
-				{
-					SetHudTextParams( HUD1_X, HUD1_Y, 1.125, 220, 220, 0, 180, 0, 0.0, 0.0, 0.0 );
-					_ShowHudText( i, hHUDSync1, "WINNER:" );
-					
-					SetHudTextParams( HUD2_X, HUD2_Y, 1.125, 220, 220, 0, 180, 0, 0.0, 0.0, 0.0 );
-					_ShowHudText( i, hHUDSync1, "%s", szWinner );
-				}
-			}
-			else if( nClients == 1 && iClients[0] == i && GetClientTeam( i ) != 1 )
-			{
-				SetHudTextParams( HUD1_X, HUD1_Y, 1.125, 0, 255, 0, 180, 0, 0.0, 0.0, 0.0 );
-				_ShowHudText( i, hHUDSync1, "THE LEADER" );
-				
-				if( iPlayerLevel[i] >= iMaxLevel )
-				{
-					SetHudTextParams( HUD2_X, HUD2_Y, 1.125, 0, 255, 0, 180, 0, 0.0, 0.0, 0.0 );
-					_ShowHudText( i, hHUDSync2, "LEVEL: FINAL" );
-				}
-				else
-				{
-					SetHudTextParams( HUD2_X, HUD2_Y, 1.125, 220, 220, 220, 180, 0, 0.0, 0.0, 0.0 );
-					_ShowHudText( i, hHUDSync2, "LEVEL: %d", iPlayerLevel[i] );
-				}
-			}
-			else
-			{
-				if( iTopLevel >= iMaxLevel )
-				{
-					SetHudTextParams( HUD1_X, HUD1_Y, 1.125, 220, 120, 0, 180, 0, 0.0, 0.0, 0.0 );
-					_ShowHudText( i, hHUDSync1, "LEADER: FINAL LVL" );
-				}
-				else
-				{
-					SetHudTextParams( HUD1_X, HUD1_Y, 1.125, 220, 220, 0, 180, 0, 0.0, 0.0, 0.0 );
-					_ShowHudText( i, hHUDSync1, "LEADER: %d LVL", iTopLevel );
-				}
-					
-				if( GetClientTeam( i ) == 1 )
-					continue;
-				
-				if( iPlayerLevel[i] >= iMaxLevel )
-				{
-					SetHudTextParams( HUD2_X, HUD2_Y, 1.15, 0, 250, 0, 180, 0, 0.0, 0.0, 0.0 );
-					_ShowHudText( i, hHUDSync2, "YOU: FINAL LVL" );
-				}
-				else
-				{
-					SetHudTextParams( HUD2_X, HUD2_Y, 1.15, 220, 220, 220, 180, 0, 0.0, 0.0, 0.0 );
-					_ShowHudText( i, hHUDSync2, "YOU: %d LVL", iPlayerLevel[i] );
-				}
-			}
-		}
-	return Plugin_Handled;
+    new iTopLevel = 0, iClients[MaxClients+1], nClients = 0;
+    if( iWinner <= 0 )
+    {
+        for( new i = 1; i <= MaxClients; i++ )
+            if( IsClientInGame( i ) && iPlayerLevel[i] > iTopLevel )
+                iTopLevel = iPlayerLevel[i];
+
+        for( new i = 1; i <= MaxClients; i++ )
+            if( IsClientInGame( i ) && iPlayerLevel[i] >= iTopLevel && GetClientTeam( i ) != 1 )
+                iClients[nClients++] = i;
+    }
+
+    for( new i = 1; i <= MaxClients; i++ )
+        if( IsClientInGame( i ) )
+        {
+            ClearSyncHud( i, hHUDSync1 );
+            ClearSyncHud( i, hHUDSync2 );
+
+            if( iWinner > 0 )
+            {
+                if( nClients == iWinner )
+                {
+                    SetHudTextParams( HUD1_X, HUD1_Y, 1.125, 0, 255, 0, 180, 0, 0.0, 0.0, 0.0 );
+                    _ShowHudText( i, hHUDSync1, "YOU ARE THE WINNER" );
+                }
+                else
+                {
+                    SetHudTextParams( HUD1_X, HUD1_Y, 1.125, 220, 220, 0, 180, 0, 0.0, 0.0, 0.0 );
+                    _ShowHudText( i, hHUDSync1, "WINNER:" );
+
+                    SetHudTextParams( HUD2_X, HUD2_Y, 1.125, 220, 220, 0, 180, 0, 0.0, 0.0, 0.0 );
+                    _ShowHudText( i, hHUDSync1, "%s", szWinner );
+                }
+            }
+            else if( nClients == 1 && iClients[0] == i && GetClientTeam( i ) != 1 )
+            {
+                SetHudTextParams( HUD1_X, HUD1_Y, 1.125, 0, 255, 0, 180, 0, 0.0, 0.0, 0.0 );
+                _ShowHudText( i, hHUDSync1, "THE LEADER" );
+
+                if( iPlayerLevel[i] >= iMaxLevel )
+                {
+                    SetHudTextParams( HUD2_X, HUD2_Y, 1.125, 0, 255, 0, 180, 0, 0.0, 0.0, 0.0 );
+                    _ShowHudText( i, hHUDSync2, "LEVEL: FINAL" );
+                }
+                else
+                {
+                    SetHudTextParams( HUD2_X, HUD2_Y, 1.125, 220, 220, 220, 180, 0, 0.0, 0.0, 0.0 );
+                    _ShowHudText( i, hHUDSync2, "LEVEL: %d", iPlayerLevel[i] );
+                }
+            }
+            else
+            {
+                if( iTopLevel >= iMaxLevel )
+                {
+                    SetHudTextParams( HUD1_X, HUD1_Y, 1.125, 220, 120, 0, 180, 0, 0.0, 0.0, 0.0 );
+                    _ShowHudText( i, hHUDSync1, "LEADER: FINAL LVL" );
+                }
+                else
+                {
+                    SetHudTextParams( HUD1_X, HUD1_Y, 1.125, 220, 220, 0, 180, 0, 0.0, 0.0, 0.0 );
+                    _ShowHudText( i, hHUDSync1, "LEADER: %d LVL", iTopLevel );
+                }
+
+                if( GetClientTeam( i ) == 1 )
+                    continue;
+
+                if( iPlayerLevel[i] >= iMaxLevel )
+                {
+                    SetHudTextParams( HUD2_X, HUD2_Y, 1.15, 0, 250, 0, 180, 0, 0.0, 0.0, 0.0 );
+                    _ShowHudText( i, hHUDSync2, "YOU: FINAL LVL" );
+                }
+                else
+                {
+                    SetHudTextParams( HUD2_X, HUD2_Y, 1.15, 220, 220, 220, 180, 0, 0.0, 0.0, 0.0 );
+                    _ShowHudText( i, hHUDSync2, "YOU: %d LVL", iPlayerLevel[i] );
+                }
+            }
+        }
+    return Plugin_Handled;
 }
 
 public Action:Timer_Announce( Handle:hTimer, any:iUserID )
 {
-	new iClient = GetClientOfUserId( iUserID );
-	if( 0 < iClient <= MaxClients && IsClientInGame( iClient ) )
-		PrintToChat( iClient, "\x07FF0000WARNING:\x07FFDA00 This is an unofficial game mode made by \x03XPenia Team\x07FFDA00." );
-	return Plugin_Stop;
+    new iClient = GetClientOfUserId( iUserID );
+    if( 0 < iClient <= MaxClients && IsClientInGame( iClient ) )
+        PrintToChat( iClient, "\x07FF0000WARNING:\x07FFDA00 This is an unofficial game mode made by \x03XPenia Team\x07FFDA00." );
+    return Plugin_Stop;
 }
 
-stock _ShowHudText( iClient, Handle:hHudSynchronizer = INVALID_HANDLE, const String:szFormat[], any:... )
-	if( 0 < iClient <= MaxClients && IsClientInGame( iClient ) )
-	{
-		//WriteLog( "_ShowHudText(%d): %L", iClient, iClient );
-		
-		new String:szBuffer[250];
-		VFormat( szBuffer, sizeof( szBuffer ), szFormat, 4 );
-		
-		if( ShowHudText( iClient, -1, szBuffer ) < 0 && hHudSynchronizer != INVALID_HANDLE )
-		{
-			//WriteLog( "_ShowHudText(%d): ShowSyncHudText( %d, %08X, '%s' )", iClient, iClient, hHudSynchronizer, szBuffer );
-			ShowSyncHudText( iClient, hHudSynchronizer, szBuffer );
-		}
-		
-		//WriteLog( "_ShowHudText(%d): end", iClient );
-	}
+    stock _ShowHudText( iClient, Handle:hHudSynchronizer = INVALID_HANDLE, const String:szFormat[], any:... )
+if( 0 < iClient <= MaxClients && IsClientInGame( iClient ) )
+{
+    //WriteLog( "_ShowHudText(%d): %L", iClient, iClient );
 
-stock UseWeapon( iClient, const String:szItem[] )
-	if( 0 < iClient <= MaxClients && IsClientInGame( iClient ) )
-	{
-		WriteLog( "UseWeapon(%d): %L", iClient, iClient );
-		if( IsPlayerAlive( iClient ) )
-		{
-			new Float:flCurTime = GetGameTime();
-			if( ( flCurTime - flLastUse[iClient] ) >= 0.1 )
-			{
-				new bool:bFound = false;
-				for( new iWeapon, String:szClassname[32], s = 0; s < 48; s++ )
-					if( IsValidEdict( ( iWeapon = GetEntPropEnt( iClient, Prop_Send, "m_hMyWeapons", s ) ) ) )
-					{
-						GetEntityClassname( iWeapon, szClassname, sizeof( szClassname ) );
-						//if( szClassname[strlen(szClassname)-1] == '2' )
-						//	szClassname[strlen(szClassname)-1] = '\0';
-						if( StrEqual( szClassname, szItem ) )
-						{
-							//EquipPlayerWeapon( iClient, iWeapon );
-							bFound = true;
-							break;
-						}
-					}
-				if( bFound )
-				{
-					WriteLog( "UseWeapon(%d): use %s", iClient, szItem );
-					FakeClientCommandEx( iClient, "use %s", szItem );
-					flLastUse[iClient] = flCurTime;
-				}
-			}
-			else
-				WriteLog( "UseWeapon(%d): %f < 0.1 (item:%s)", iClient, ( flCurTime - flLastUse[iClient] ), szItem );
-		}
-		else
-			WriteLog( "UseWeapon(%d): client is dead (item:%s)", iClient, szItem );
-		WriteLog( "UseWeapon(%d): end", iClient );
-	}
+    new String:szBuffer[250];
+    VFormat( szBuffer, sizeof( szBuffer ), szFormat, 4 );
+
+    if( ShowHudText( iClient, -1, szBuffer ) < 0 && hHudSynchronizer != INVALID_HANDLE )
+    {
+        //WriteLog( "_ShowHudText(%d): ShowSyncHudText( %d, %08X, '%s' )", iClient, iClient, hHudSynchronizer, szBuffer );
+        ShowSyncHudText( iClient, hHudSynchronizer, szBuffer );
+    }
+
+    //WriteLog( "_ShowHudText(%d): end", iClient );
+}
+
+    stock UseWeapon( iClient, const String:szItem[] )
+if( 0 < iClient <= MaxClients && IsClientInGame( iClient ) )
+{
+    WriteLog( "UseWeapon(%d): %L", iClient, iClient );
+    if( IsPlayerAlive( iClient ) )
+    {
+        new Float:flCurTime = GetGameTime();
+        if( ( flCurTime - flLastUse[iClient] ) >= 0.1 )
+        {
+            new bool:bFound = false;
+            for( new iWeapon, String:szClassname[32], s = 0; s < 48; s++ )
+                if( IsValidEdict( ( iWeapon = GetEntPropEnt( iClient, Prop_Send, "m_hMyWeapons", s ) ) ) )
+                {
+                    GetEntityClassname( iWeapon, szClassname, sizeof( szClassname ) );
+                    //if( szClassname[strlen(szClassname)-1] == '2' )
+                    //	szClassname[strlen(szClassname)-1] = '\0';
+                    if( StrEqual( szClassname, szItem ) )
+                    {
+                        //EquipPlayerWeapon( iClient, iWeapon );
+                        bFound = true;
+                        break;
+                    }
+                }
+            if( bFound )
+            {
+                WriteLog( "UseWeapon(%d): use %s", iClient, szItem );
+                FakeClientCommandEx( iClient, "use %s", szItem );
+                flLastUse[iClient] = flCurTime;
+            }
+        }
+        else
+            WriteLog( "UseWeapon(%d): %f < 0.1 (item:%s)", iClient, ( flCurTime - flLastUse[iClient] ), szItem );
+    }
+    else
+        WriteLog( "UseWeapon(%d): client is dead (item:%s)", iClient, szItem );
+    WriteLog( "UseWeapon(%d): end", iClient );
+}
 
 stock SetAmmo( iClient, iWeapon, iAmmo )
 {
-	if( 0 < iClient <= MaxClients && IsClientInGame( iClient ) )
-	{
-		new Handle:hPack;
-		CreateDataTimer( 0.1, Timer_SetAmmo, hPack, TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE );
-		WritePackCell( hPack, GetClientUserId( iClient ) );
-		WritePackCell( hPack, EntIndexToEntRef( iWeapon ) );
-		WritePackCell( hPack, iAmmo );
-	}
+    if( 0 < iClient <= MaxClients && IsClientInGame( iClient ) )
+    {
+        new Handle:hPack;
+        CreateDataTimer( 0.1, Timer_SetAmmo, hPack, TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE );
+        WritePackCell( hPack, GetClientUserId( iClient ) );
+        WritePackCell( hPack, EntIndexToEntRef( iWeapon ) );
+        WritePackCell( hPack, iAmmo );
+    }
 }
 public Action:Timer_SetAmmo( Handle:hTimer, Handle:hPack )
 {
-	ResetPack( hPack );
-	
-	if( iAmmoOffset <= 0 )
-		return Plugin_Stop;
-	
-	new iClient = GetClientOfUserId( ReadPackCell( hPack ) );
-	if( !( 0 < iClient <= MaxClients && IsClientInGame( iClient ) && IsPlayerAlive( iClient ) ) )
-		return Plugin_Stop;
-	
-	new iWeapon = EntRefToEntIndex( ReadPackCell( hPack ) );
-	if( iWeapon <= MaxClients || !IsValidEdict( iWeapon ) )
-		return Plugin_Stop;
-	
-	SetEntData( iClient, iAmmoOffset + GetEntProp( iWeapon, Prop_Send, "m_iPrimaryAmmoType" ) * 4, ReadPackCell( hPack ) );
-	return Plugin_Stop;
+    ResetPack( hPack );
+
+    if( iAmmoOffset <= 0 )
+        return Plugin_Stop;
+
+    new iClient = GetClientOfUserId( ReadPackCell( hPack ) );
+    if( !( 0 < iClient <= MaxClients && IsClientInGame( iClient ) && IsPlayerAlive( iClient ) ) )
+        return Plugin_Stop;
+
+    new iWeapon = EntRefToEntIndex( ReadPackCell( hPack ) );
+    if( iWeapon <= MaxClients || !IsValidEdict( iWeapon ) )
+        return Plugin_Stop;
+
+    SetEntData( iClient, iAmmoOffset + GetEntProp( iWeapon, Prop_Send, "m_iPrimaryAmmoType" ) * 4, ReadPackCell( hPack ) );
+    return Plugin_Stop;
 }
 
-stock KillEdict( iEdict )
-	if( iEdict > MaxClients && IsValidEdict( iEdict ) )
-	{
-		WriteLog( "KillEdict: AcceptEntityInput( %d, \"Kill\" )", iEdict );
-		AcceptEntityInput( iEdict, "Kill" );
-	}
+    stock KillEdict( iEdict )
+if( iEdict > MaxClients && IsValidEdict( iEdict ) )
+{
+    WriteLog( "KillEdict: AcceptEntityInput( %d, \"Kill\" )", iEdict );
+    AcceptEntityInput( iEdict, "Kill" );
+}
 
-stock StripWeapons( iClient )
-	if( 0 < iClient <= MaxClients && IsClientInGame( iClient ) && IsPlayerAlive( iClient ) )
-	{
-		WriteLog( "StripWeapons(%d): %L", iClient, iClient );
-		for( new iWeapon, bool:bFound, iWeapons[48], String:szClassname[32], s = 0; s < 48; s++ )
-		{
-			bFound = false;
-			szClassname[0] = '\0';
-			if( IsValidEdict( ( iWeapon = GetEntPropEnt( iClient, Prop_Send, "m_hMyWeapons", s ) ) ) )
-			{
-				for( new w = 0; w < sizeof( iWeapons ); w++ )
-					if( iWeapons[w] == iWeapon )
-					{
-						bFound = true;
-						WriteLog( "StripWeapons(%d): found duplicate '%s' (slot:%d,entity:%d)", iClient, szClassname, s, iWeapon );
-					}
-				if( bFound )
-					continue;
-				for( new w = 0; w < sizeof( iWeapons ); w++ )
-					if( iWeapons[w] <= MaxClients )
-					{
-						iWeapons[w] = iWeapon;
-						break;
-					}
-				GetEntityClassname( iWeapon, szClassname, sizeof( szClassname ) );
-				if( bAllowFists && StrEqual( szClassname, "weapon_fists" ) )
-				{
-					WriteLog( "StripWeapons(%d): skipping '%s' (slot:%d,entity:%d)", iClient, szClassname, s, iWeapon );
-					continue;
-				}
-				else
-				{
-					WriteLog( "StripWeapons(%d): removing '%s' (slot:%d,entity:%d)", iClient, szClassname, s, iWeapon );
-					RemovePlayerItem( iClient, iWeapon );
-					SetEntPropEnt( iClient, Prop_Send, "m_hMyWeapons", INVALID_ENT_REFERENCE, s );
-					KillEdict( iWeapon );
-				}
-			}
-		}
-		WriteLog( "StripWeapons(%d): end", iClient );
-	}
+    stock StripWeapons( iClient )
+if( 0 < iClient <= MaxClients && IsClientInGame( iClient ) && IsPlayerAlive( iClient ) )
+{
+    WriteLog( "StripWeapons(%d): %L", iClient, iClient );
+    for( new iWeapon, bool:bFound, iWeapons[48], String:szClassname[32], s = 0; s < 48; s++ )
+    {
+        bFound = false;
+        szClassname[0] = '\0';
+        if( IsValidEdict( ( iWeapon = GetEntPropEnt( iClient, Prop_Send, "m_hMyWeapons", s ) ) ) )
+        {
+            for( new w = 0; w < sizeof( iWeapons ); w++ )
+                if( iWeapons[w] == iWeapon )
+                {
+                    bFound = true;
+                    WriteLog( "StripWeapons(%d): found duplicate '%s' (slot:%d,entity:%d)", iClient, szClassname, s, iWeapon );
+                }
+            if( bFound )
+                continue;
+            for( new w = 0; w < sizeof( iWeapons ); w++ )
+                if( iWeapons[w] <= MaxClients )
+                {
+                    iWeapons[w] = iWeapon;
+                    break;
+                }
+            GetEntityClassname( iWeapon, szClassname, sizeof( szClassname ) );
+            if( bAllowFists && StrEqual( szClassname, "weapon_fists" ) )
+            {
+                WriteLog( "StripWeapons(%d): skipping '%s' (slot:%d,entity:%d)", iClient, szClassname, s, iWeapon );
+                continue;
+            }
+            else
+            {
+                WriteLog( "StripWeapons(%d): removing '%s' (slot:%d,entity:%d)", iClient, szClassname, s, iWeapon );
+                RemovePlayerItem( iClient, iWeapon );
+                SetEntPropEnt( iClient, Prop_Send, "m_hMyWeapons", INVALID_ENT_REFERENCE, s );
+                KillEdict( iWeapon );
+            }
+        }
+    }
+    WriteLog( "StripWeapons(%d): end", iClient );
+}
 
 stock RestartTheGame()
 {
-	CreateTimer( 0.0, Timer_RespawnPlayers, .flags = TIMER_FLAG_NO_MAPCHANGE );
-	
-	PrintCenterTextAll( "GUNGAME HAS BEEN RESTARTED!" );
-	PrintToChatAll( "%sThe game has been restarted!", CHAT_PREFIX );
+    CreateTimer( 0.0, Timer_RespawnPlayers, .flags = TIMER_FLAG_NO_MAPCHANGE );
+
+    PrintCenterTextAll( "GUNGAME HAS BEEN RESTARTED!" );
+    PrintToChatAll( "%sThe game has been restarted!", CHAT_PREFIX );
 }
 
 stock AllowMapEnd( bool:bState )
 {
-	if( fof_sv_dm_timer_ends_map != INVALID_HANDLE )
-		SetConVarBool( fof_sv_dm_timer_ends_map, bState, false, false );
+    if( fof_sv_dm_timer_ends_map != INVALID_HANDLE )
+        SetConVarBool( fof_sv_dm_timer_ends_map, bState, false, false );
 }
 
 stock LeaderCheck( bool:bShowMessage = true )
 {
-	new iTopLevel = 1, nLeaders = 0, iOldLeader = iLeader;
-	
-	for( new i = 1; i <= MaxClients; i++ )
-	{
-		if( IsClientInGame( i ) )
-		{
-			bWasInTheLead[i] = bInTheLead[i];
-			if( iPlayerLevel[i] > iTopLevel )
-				iTopLevel = iPlayerLevel[i];
-		}
-		bInTheLead[i] = false;
-	}
-	
-	for( new i = 1; i <= MaxClients; i++ )
-		if( IsClientInGame( i ) && iPlayerLevel[i] >= iTopLevel && GetClientTeam( i ) != 1 )
-		{
-			bInTheLead[i] = true;
-			iLeader = ( (++nLeaders) == 1 ? i : 0 );
-		}
-	
-	for( new i = 1; i <= MaxClients; i++ )
-		if( IsClientInGame( i ) )
-		{
-			if( bInTheLead[i] && ( !bWasInTheLead[i] || iOldLeader == i ) && nLeaders > 1 )
-			{
-				EmitSoundToClient( i, SOUND_TIEDLEAD, .flags = SND_CHANGEPITCH, .pitch = 115);
-				if( bShowMessage )
-					PrintToConsoleAll( "%s'%N' is also in the lead (level %d)", CONSOLE_PREFIX, i, iPlayerLevel[i] );
-			}
-			else if( bInTheLead[i] && iOldLeader != iLeader && iLeader == i )
-			{
-				EmitSoundToClient( i, SOUND_TAKENLEAD, .flags = SND_CHANGEPITCH, .pitch = 115);
-				if( bShowMessage )
-				{
-					PrintCenterTextAll( "%N is in the lead", i, iPlayerLevel[i] );
-					PrintToConsoleAll( "%s'%N' is in the lead (level %d)", CONSOLE_PREFIX, i, iPlayerLevel[i] );
-				}
-			}
-			else if( !bInTheLead[i] && bWasInTheLead[i] )
-				EmitSoundToClient( i, SOUND_LOSTLEAD);
-		}
-	
-	return nLeaders;
+    new iTopLevel = 1, nLeaders = 0, iOldLeader = iLeader;
+
+    for( new i = 1; i <= MaxClients; i++ )
+    {
+        if( IsClientInGame( i ) )
+        {
+            bWasInTheLead[i] = bInTheLead[i];
+            if( iPlayerLevel[i] > iTopLevel )
+                iTopLevel = iPlayerLevel[i];
+        }
+        bInTheLead[i] = false;
+    }
+
+    for( new i = 1; i <= MaxClients; i++ )
+        if( IsClientInGame( i ) && iPlayerLevel[i] >= iTopLevel && GetClientTeam( i ) != 1 )
+        {
+            bInTheLead[i] = true;
+            iLeader = ( (++nLeaders) == 1 ? i : 0 );
+        }
+
+    for( new i = 1; i <= MaxClients; i++ )
+        if( IsClientInGame( i ) )
+        {
+            if( bInTheLead[i] && ( !bWasInTheLead[i] || iOldLeader == i ) && nLeaders > 1 )
+            {
+                EmitSoundToClient( i, SOUND_TIEDLEAD, .flags = SND_CHANGEPITCH, .pitch = 115);
+                if( bShowMessage )
+                    PrintToConsoleAll( "%s'%N' is also in the lead (level %d)", CONSOLE_PREFIX, i, iPlayerLevel[i] );
+            }
+            else if( bInTheLead[i] && iOldLeader != iLeader && iLeader == i )
+            {
+                EmitSoundToClient( i, SOUND_TAKENLEAD, .flags = SND_CHANGEPITCH, .pitch = 115);
+                if( bShowMessage )
+                {
+                    PrintCenterTextAll( "%N is in the lead", i, iPlayerLevel[i] );
+                    PrintToConsoleAll( "%s'%N' is in the lead (level %d)", CONSOLE_PREFIX, i, iPlayerLevel[i] );
+                }
+            }
+            else if( !bInTheLead[i] && bWasInTheLead[i] )
+                EmitSoundToClient( i, SOUND_LOSTLEAD);
+        }
+
+    return nLeaders;
 }
 
 stock bool:SetGameDescription( String:szNewValue[], bool:bOverride = true )
 {
 #if defined _SteamWorks_Included
-	if( bOverride )
-		return SteamWorks_SetGameDescription( szNewValue );
-	
-	new String:szOldValue[64];
-	GetGameDescription( szOldValue, sizeof( szOldValue ), false );
-	if( StrEqual( szOldValue, szNewValue ) )
-	{
-		GetGameDescription( szOldValue, sizeof( szOldValue ), true );
-		return SteamWorks_SetGameDescription( szOldValue );
-	}
+    if( bOverride )
+        return SteamWorks_SetGameDescription( szNewValue );
+
+    new String:szOldValue[64];
+    GetGameDescription( szOldValue, sizeof( szOldValue ), false );
+    if( StrEqual( szOldValue, szNewValue ) )
+    {
+        GetGameDescription( szOldValue, sizeof( szOldValue ), true );
+        return SteamWorks_SetGameDescription( szOldValue );
+    }
 #endif
-	return false;
+    return false;
 }
 
 stock WriteLog( const String:szFormat[], any:... )
 {
 #if defined DEBUG
-	if( szLogFile[0] != '\0' && szFormat[0] != '\0' )
-	{
-		decl String:szBuffer[2048];
-		VFormat( szBuffer, sizeof( szBuffer ), szFormat, 2 );
-		LogToFileEx( szLogFile, "[%.3f] %s", GetGameTime(), szBuffer );
-		//PrintToServer("[%.3f] %s", GetGameTime(), szBuffer );
-	}
+    if( szLogFile[0] != '\0' && szFormat[0] != '\0' )
+    {
+        decl String:szBuffer[2048];
+        VFormat( szBuffer, sizeof( szBuffer ), szFormat, 2 );
+        LogToFileEx( szLogFile, "[%.3f] %s", GetGameTime(), szBuffer );
+        //PrintToServer("[%.3f] %s", GetGameTime(), szBuffer );
+    }
 #endif
 }
 
 stock PrintToConsoleAll( const String:szFormat[], any:... )
-	if( szFormat[0] != '\0' )
-	{
-		decl String:szBuffer[1024];
-		VFormat( szBuffer, sizeof( szBuffer ), szFormat, 2 );
-		
-		PrintToServer( szBuffer );
-		for( new i = 1; i <= MaxClients; i++ )
-			if( IsClientInGame( i ) )
-				PrintToConsole( i, szBuffer );
-	}
+    if( szFormat[0] != '\0' )
+{
+    decl String:szBuffer[1024];
+    VFormat( szBuffer, sizeof( szBuffer ), szFormat, 2 );
+
+    PrintToServer( szBuffer );
+    for( new i = 1; i <= MaxClients; i++ )
+        if( IsClientInGame( i ) )
+            PrintToConsole( i, szBuffer );
+}
 
 stock Int32Max( iValue1, iValue2 )
-	return iValue1 > iValue2 ? iValue1 : iValue2;
+    return iValue1 > iValue2 ? iValue1 : iValue2;
 stock Float:FloatMax( Float:flValue1, Float:flValue2 )
-	return FloatCompare( flValue1, flValue2 ) >= 0 ? flValue1 : flValue2;
+    return FloatCompare( flValue1, flValue2 ) >= 0 ? flValue1 : flValue2;
 
 public Action:Command_DumpScores(caller, args)
 {
