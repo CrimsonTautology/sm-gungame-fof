@@ -110,7 +110,6 @@ public OnPluginStart()
     HookEvent( "player_activate", Event_PlayerActivate );
     HookEvent( "player_spawn", Event_PlayerSpawn );
     HookEvent( "player_shoot", Event_PlayerShoot );
-    HookEvent( "player_death", Event_PlayerDeath_Pre, EventHookMode_Pre );
     HookEvent( "player_death", Event_PlayerDeath );
     HookEvent("round_start", Event_RoundStart);
 
@@ -332,14 +331,6 @@ public Event_PlayerSpawn( Handle:hEvent, const String:szEventName[], bool:bDontB
 	}
 	
 	CreateTimer( 0.1, Timer_UpdateEquipment, iUserID, TIMER_FLAG_NO_MAPCHANGE );
-}
-
-public Action:Event_PlayerDeath_Pre( Handle:hEvent, const String:szEventName[], bool:bDontBroadcast )
-{
-	new iVictim = GetClientOfUserId( GetEventInt( hEvent, "userid" ) );
-	if( iWinner <= 0 && 0 < iVictim <= MaxClients && IsClientInGame( iVictim ) )
-		StripWeapons( iVictim );
-	return Plugin_Continue;
 }
 
 public Event_PlayerShoot( Handle:hEvent, const String:szEventName[], bool:bDontBroadcast )
