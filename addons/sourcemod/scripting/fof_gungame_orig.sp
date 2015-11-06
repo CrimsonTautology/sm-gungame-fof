@@ -311,7 +311,7 @@ public Event_PlayerActivate( Handle:hEvent, const String:szEventName[], bool:bDo
 	if( 0 < iClient <= MaxClients )
 	{
         iPlayerLevel[ iClient ] = 1;
-        SetClientNotoriety(iClient, iPlayerLevel[iClient]);//TODO
+        //SetClientNotoriety(iClient, iPlayerLevel[iClient]);//TODO
         flLastKill[ iClient ] = 0.0;
         flLastLevelUP[ iClient ] = 0.0;
         flLastUse[ iClient ] = 0.0;
@@ -539,9 +539,9 @@ public Action:Event_PlayerDeathPost(Handle:event, const String:name[], bool:dont
     new assist = GetClientOfUserId(GetEventInt(event, "assist"));
 
     //TODO
-    if(0 < victim <= MaxClients) SetClientNotoriety(victim, iPlayerLevel[victim]);
-    if(0 < killer <= MaxClients) SetClientNotoriety(killer, iPlayerLevel[killer]);
-    if(0 < assist <= MaxClients) SetClientNotoriety(assist, iPlayerLevel[assist]);
+    //if(0 < victim <= MaxClients) SetClientNotoriety(victim, iPlayerLevel[victim]);
+    //if(0 < killer <= MaxClients) SetClientNotoriety(killer, iPlayerLevel[killer]);
+    //if(0 < assist <= MaxClients) SetClientNotoriety(assist, iPlayerLevel[assist]);
 }
 
 public Event_RoundStart(Event:event, const String:name[], bool:dontBroadcast)
@@ -571,8 +571,8 @@ public Event_RoundStart(Event:event, const String:name[], bool:dontBroadcast)
 public Action:Hook_OnTakeDamage( iVictim, &iAttacker, &iInflictor, &Float:flDamage, &iDmgType, &iWeapon, Float:vecDmgForce[3], Float:vecDmgPosition[3], iDmgCustom )
 {
     //TODO
-    if(0 < iVictim <= MaxClients) SetClientNotoriety(iVictim, iPlayerLevel[iVictim]);
-    if(0 < iAttacker <= MaxClients) SetClientNotoriety(iAttacker, iPlayerLevel[iAttacker]);
+    //if(0 < iVictim <= MaxClients) SetClientNotoriety(iVictim, iPlayerLevel[iVictim]);
+    //if(0 < iAttacker <= MaxClients) SetClientNotoriety(iAttacker, iPlayerLevel[iAttacker]);
 
     if( 0 < iVictim <= MaxClients && IsClientInGame( iVictim ) )
     {
@@ -698,7 +698,7 @@ public Action:Timer_RespawnPlayers( Handle:hTimer )
             bUpdateEquipment[i] = true;
             bWasInGame[i] = GetClientTeam( i ) != 1;
             flStart[i] = GetGameTime();
-            SetClientNotoriety(i, iPlayerLevel[i]);
+            //SetClientNotoriety(i, iPlayerLevel[i]);
         }
         ExtinguishClient( i );
     }
