@@ -344,9 +344,11 @@ public Action:Event_PlayerDeath_Pre( Handle:hEvent, const String:szEventName[], 
 
 public Event_PlayerShoot( Handle:hEvent, const String:szEventName[], bool:bDontBroadcast )
 {
-	new iClient = GetClientOfUserId( GetEventInt( hEvent, "userid" ) );
-	if( 0 <= iClient < sizeof( szLastWeaponFired ) )
-		GetEventString( hEvent, "weapon", szLastWeaponFired[iClient], sizeof( szLastWeaponFired[] ) );
+    new iClient = GetClientOfUserId(GetEventInt(hEvent, "userid"));
+    if(0 <= iClient < MaxClients)
+    {
+        GetEventString(hEvent, "weapon", szLastWeaponFired[iClient], sizeof(szLastWeaponFired[]));
+    }
 }
 
 public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontBroadcast )
