@@ -559,11 +559,6 @@ public Action:Hook_OnTakeDamage( iVictim, &iAttacker, &iInflictor, &Float:flDama
             iDmgType |= DMG_CRUSH;
             return Plugin_Changed;
         }
-        else if( /*iWinner == iVictim ||*/ ( iDmgType & (DMG_BURN|DMG_DIRECT) ) == (DMG_BURN|DMG_DIRECT) && iPlayerLevel[iVictim] >= iMaxLevel )
-        {
-            flDamage = 0.0;
-            return Plugin_Changed;
-        }
     }
     return Plugin_Continue;
 }
@@ -1186,12 +1181,13 @@ public Action:Command_DumpScores(caller, args)
         if(!IsClientInGame(client) || IsFakeClient(client))
             continue;
 
-        PrintToConsole(caller, "%5d %9d %5d %6d %L",
+        PrintToConsole(caller, "%5d %9d %5d %6d %L %s",
                 iPlayerLevel[client],
                 GetEntProp(client, Prop_Send, "m_nLastRoundNotoriety"),
                 GetEntProp(client, Prop_Data, "m_iFrags"),
                 GetEntProp(client, Prop_Data, "m_iDeaths"),
-                client);
+                client,
+                szLastWeaponFired[client]);
     }
     return Plugin_Handled;
 }
