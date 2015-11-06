@@ -476,9 +476,9 @@ public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontB
             {
                 iPlayerLevel[i] = 1;
                 flStart[i] = 0.0;
-                if( IsClientInGame( i ) )
-                    CreateTimer( 0.0, Timer_UpdateEquipment, GetClientUserId( i ), TIMER_FLAG_NO_MAPCHANGE );
             }
+            if( IsClientInGame( i ) )
+                CreateTimer( 0.0, Timer_UpdateEquipment, GetClientUserId( i ), TIMER_FLAG_NO_MAPCHANGE );
         }
 
         CreateTimer( 3.0, Timer_RespawnAnnounce, .flags = TIMER_FLAG_NO_MAPCHANGE );
