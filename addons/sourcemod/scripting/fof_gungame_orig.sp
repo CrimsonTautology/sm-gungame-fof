@@ -488,6 +488,7 @@ public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontB
             }
             if( IsClientInGame( i ) )
                 CreateTimer( 0.0, Timer_UpdateEquipment, GetClientUserId( i ), TIMER_FLAG_NO_MAPCHANGE );
+                //TODO don't call this on winner?
         }
 
         CreateTimer( 3.0, Timer_RespawnAnnounce, .flags = TIMER_FLAG_NO_MAPCHANGE );
@@ -564,74 +565,76 @@ public Action:Hook_OnTakeDamage( iVictim, &iAttacker, &iInflictor, &Float:flDama
 }
 
 public Hook_WeaponSwitchPost( iClient, iWeapon )
-	if( iClient != iWinner && 0 < iClient <= MaxClients && IsClientInGame( iClient ) && IsPlayerAlive( iClient ) )
-	{
-		WriteLog( "Hook_WeaponSwitchPost(%d): %L", iClient, iClient );
-		
-		new String:szPlayerLevel[16];
-		IntToString( iPlayerLevel[iClient], szPlayerLevel, sizeof( szPlayerLevel ) );
-		
-		new String:szAllowedWeapon[2][24], Handle:hAllowedWeapons = CreateArray( 8 );
-		if( bAllowFists )
-		{
-			WriteLog( "Hook_WeaponSwitchPost(%d): adding weapon_fists", iClient );
-			PushArrayString( hAllowedWeapons, "weapon_fists" );
-		}
-		if( iWinner <= 0 )
-		{
-			KvRewind( hWeapons );
-			if( KvJumpToKey( hWeapons, szPlayerLevel, false ) && KvGotoFirstSubKey( hWeapons, false ) )
-			{
-				KvGetSectionName( hWeapons, szAllowedWeapon[0], sizeof( szAllowedWeapon[] ) );
-				KvGoBack( hWeapons );
-				if( szAllowedWeapon[0][0] != '\0' )
-				{
-					WriteLog( "Hook_WeaponSwitchPost(%d): adding '%s'", iClient, szAllowedWeapon[0] );
-					PushArrayString( hAllowedWeapons, szAllowedWeapon[0] );
-				}
-				
-				KvGetString( hWeapons, szAllowedWeapon[0], szAllowedWeapon[1], sizeof( szAllowedWeapon[] ) );
-				KvGoBack( hWeapons );
-				if( szAllowedWeapon[1][0] != '\0' )
-				{
-					WriteLog( "Hook_WeaponSwitchPost(%d): adding '%s'", iClient, szAllowedWeapon[1] );
-					PushArrayString( hAllowedWeapons, szAllowedWeapon[1] );
-				}
-			}
-		}
-		
-		new iEntWeapon[2];
-		iEntWeapon[0] = GetEntPropEnt( iClient, Prop_Send, "m_hActiveWeapon" );
-		iEntWeapon[1] = GetEntPropEnt( iClient, Prop_Send, "m_hActiveWeapon2" );
-		
-		for( new String:szClassname[32], i, w = 0; w < sizeof( iEntWeapon ); w++ )
-			if( iEntWeapon[w] > MaxClients && IsValidEdict( iEntWeapon[w] ) )
-			{
-				GetEntityClassname( iEntWeapon[w], szClassname, sizeof( szClassname ) );
-				if( szClassname[strlen(szClassname)-1] == '2' )
-					szClassname[strlen(szClassname)-1] = '\0';
-				if( StrContains( szClassname, "weapon_" ) != 0 )
-				{
-					WriteLog( "Hook_WeaponSwitchPost(%d): incorrect weapon '%s' (%s/%d)", iClient, szClassname, w == 0 ? "m_hActiveWeapon" : "m_hActiveWeapon2", iEntWeapon[w] );
-					continue;
-				}
-				
-				if( ( i = FindStringInArray( hAllowedWeapons, szClassname ) ) >= 0 )
-					RemoveFromArray( hAllowedWeapons, i );
-				else
-				{
-					WriteLog( "Hook_WeaponSwitchPost(%d): unacceptable '%s' (%s/%d)", iClient, szClassname, w == 0 ? "m_hActiveWeapon" : "m_hActiveWeapon2", iEntWeapon[w] );
-					
-					RemovePlayerItem( iClient, iEntWeapon[w] );
-					KillEdict( iEntWeapon[w] );
-					
-					UseWeapon( iClient, "weapon_fists" );
-				}
-			}
-		
-		CloseHandle( hAllowedWeapons );
-		WriteLog( "Hook_WeaponSwitchPost(%d): end", iClient );
-	}
+{
+    if( iClient != iWinner && 0 < iClient <= MaxClients && IsClientInGame( iClient ) && IsPlayerAlive( iClient ) )
+    {
+        WriteLog( "Hook_WeaponSwitchPost(%d): %L", iClient, iClient );
+
+        new String:szPlayerLevel[16];
+        IntToString( iPlayerLevel[iClient], szPlayerLevel, sizeof( szPlayerLevel ) );
+
+        new String:szAllowedWeapon[2][24], Handle:hAllowedWeapons = CreateArray( 8 );
+        if( bAllowFists )
+        {
+            WriteLog( "Hook_WeaponSwitchPost(%d): adding weapon_fists", iClient );
+            PushArrayString( hAllowedWeapons, "weapon_fists" );
+        }
+        if( iWinner <= 0 )
+        {
+            KvRewind( hWeapons );
+            if( KvJumpToKey( hWeapons, szPlayerLevel, false ) && KvGotoFirstSubKey( hWeapons, false ) )
+            {
+                KvGetSectionName( hWeapons, szAllowedWeapon[0], sizeof( szAllowedWeapon[] ) );
+                KvGoBack( hWeapons );
+                if( szAllowedWeapon[0][0] != '\0' )
+                {
+                    WriteLog( "Hook_WeaponSwitchPost(%d): adding '%s'", iClient, szAllowedWeapon[0] );
+                    PushArrayString( hAllowedWeapons, szAllowedWeapon[0] );
+                }
+
+                KvGetString( hWeapons, szAllowedWeapon[0], szAllowedWeapon[1], sizeof( szAllowedWeapon[] ) );
+                KvGoBack( hWeapons );
+                if( szAllowedWeapon[1][0] != '\0' )
+                {
+                    WriteLog( "Hook_WeaponSwitchPost(%d): adding '%s'", iClient, szAllowedWeapon[1] );
+                    PushArrayString( hAllowedWeapons, szAllowedWeapon[1] );
+                }
+            }
+        }
+
+        new iEntWeapon[2];
+        iEntWeapon[0] = GetEntPropEnt( iClient, Prop_Send, "m_hActiveWeapon" );
+        iEntWeapon[1] = GetEntPropEnt( iClient, Prop_Send, "m_hActiveWeapon2" );
+
+        for( new String:szClassname[32], i, w = 0; w < sizeof( iEntWeapon ); w++ )
+            if( iEntWeapon[w] > MaxClients && IsValidEdict( iEntWeapon[w] ) )
+            {
+                GetEntityClassname( iEntWeapon[w], szClassname, sizeof( szClassname ) );
+                if( szClassname[strlen(szClassname)-1] == '2' )
+                    szClassname[strlen(szClassname)-1] = '\0';
+                if( StrContains( szClassname, "weapon_" ) != 0 )
+                {
+                    WriteLog( "Hook_WeaponSwitchPost(%d): incorrect weapon '%s' (%s/%d)", iClient, szClassname, w == 0 ? "m_hActiveWeapon" : "m_hActiveWeapon2", iEntWeapon[w] );
+                    continue;
+                }
+
+                if( ( i = FindStringInArray( hAllowedWeapons, szClassname ) ) >= 0 )
+                    RemoveFromArray( hAllowedWeapons, i );
+                else
+                {
+                    WriteLog( "Hook_WeaponSwitchPost(%d): unacceptable '%s' (%s/%d)", iClient, szClassname, w == 0 ? "m_hActiveWeapon" : "m_hActiveWeapon2", iEntWeapon[w] );
+
+                    RemovePlayerItem( iClient, iEntWeapon[w] );
+                    KillEdict( iEntWeapon[w] );
+
+                    UseWeapon( iClient, "weapon_fists" );
+                }
+            }
+
+        CloseHandle( hAllowedWeapons );
+        WriteLog( "Hook_WeaponSwitchPost(%d): end", iClient );
+    }
+}
 
 public Action:Timer_RespawnAnnounce( Handle:hTimer, any:iUserID )
 {
@@ -684,11 +687,13 @@ public Action:Timer_RespawnPlayers( Handle:hTimer )
         AcceptEntityInput( iEntity, "Kill" );
 
     for( new iClient = 1; iClient <= MaxClients; iClient++ )
+    {
         if( IsClientInGame( iClient ) )
         {
             KillEdict( GetEntPropEnt( iClient, Prop_Send, "m_hRagdoll" ) );
             SetEntPropEnt( iClient, Prop_Send, "m_hRagdoll", INVALID_ENT_REFERENCE );
         }
+    }
 
     return Plugin_Stop;
 }
@@ -698,6 +703,7 @@ public Action:Timer_RespawnPlayers_Fix( Handle:hTimer )
 	AllowMapEnd( false );
 	
 	for( new i = 1; i <= MaxClients; i++ )
+    {
 		if( IsClientInGame( i ) )
 		{
 			if( bWasInGame[i] && GetClientTeam( i ) == 1 )
@@ -707,6 +713,7 @@ public Action:Timer_RespawnPlayers_Fix( Handle:hTimer )
 			else if( bUpdateEquipment[i] )
 				Timer_UpdateEquipment( INVALID_HANDLE, GetClientUserId( i ) );
 		}
+    }
 	
 	new timeleft;
 	if( GetMapTimeLeft( timeleft ) && timeleft > 0 )
@@ -1152,6 +1159,7 @@ stock WriteLog( const String:szFormat[], any:... )
 		decl String:szBuffer[2048];
 		VFormat( szBuffer, sizeof( szBuffer ), szFormat, 2 );
 		LogToFileEx( szLogFile, "[%.3f] %s", GetGameTime(), szBuffer );
+		//PrintToServer("[%.3f] %s", GetGameTime(), szBuffer );
 	}
 #endif
 }
