@@ -16,7 +16,8 @@
 #endif
 
 #define SOUND_LEVELUP  "music/bounty/bounty_objective_stinger1.mp3"
-#define SOUND_ROUNDWON  "music/bounty/bounty_objective_stinger2.mp3"
+#define SOUND_FINAL "music/bounty/bounty_objective_stinger2.mp3"
+#define SOUND_ROUNDWON  "music/round_end_stinger.mp3"
 #define SOUND_FIGHT  "music/standoff1.mp3"
 #define SOUND_HUMILIATION  "animals/chicken_pain1.wav"
 #define SOUND_LOSTLEAD  "music/most_wanted_stinger.wav"
@@ -187,6 +188,7 @@ public OnMapStart()
     }
 
     PrecacheSound( SOUND_LEVELUP, true );
+    PrecacheSound( SOUND_FINAL, true );
     PrecacheSound( SOUND_ROUNDWON, true );
     PrecacheSound( SOUND_FIGHT, true );
     PrecacheSound( SOUND_HUMILIATION, true );
@@ -381,7 +383,7 @@ public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontB
 
             PrintCenterText( iVictim, "Ungraceful death! You are now level %d of %d.", iPlayerLevel[iVictim], iMaxLevel );
             PrintToChat( iVictim, "%sUngraceful death! You are now level %d of %d.", CHAT_PREFIX, iPlayerLevel[iVictim], iMaxLevel );
-            EmitSoundToClient( iVictim, SOUND_LEVELUP );
+            EmitSoundToClient( iVictim, SOUND_HUMILIATION );
         }
         return;
     }
@@ -503,7 +505,7 @@ public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontB
 
         PrintCenterTextAll( "%N is on the final weapon!", iKiller );
         PrintToConsoleAll( "%sPlayer '%N' is on the final weapon!", CONSOLE_PREFIX, iKiller );
-        EmitSoundToClient( iKiller, SOUND_LEVELUP );
+        EmitSoundToClient( iKiller, SOUND_FINAL );
     }
     else
     {
