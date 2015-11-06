@@ -546,7 +546,6 @@ public Action:Event_PlayerDeathPost(Handle:event, const String:name[], bool:dont
 
 public Event_RoundStart(Event:event, const String:name[], bool:dontBroadcast)
 {
-    PrintToConsole(0, "Hit Event_RoundStart");
     RemoveCrates();
 
     //Create a game_score entity to modify notoriety
@@ -1268,6 +1267,5 @@ SetClientNotoriety(client, notoriety)
     if(g_GameScore != INVALID_ENT_REFERENCE)
     {
         AcceptEntityInput(g_GameScore, "ApplyScore", client, g_GameScore);
-        PrintToConsole(0, " - Hit ApplyScore");//TODO
     }
 }
