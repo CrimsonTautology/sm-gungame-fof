@@ -110,9 +110,8 @@ public OnPluginStart()
     HookEvent( "player_activate", Event_PlayerActivate );
     HookEvent( "player_spawn", Event_PlayerSpawn );
     HookEvent( "player_shoot", Event_PlayerShoot );
-    //HookEvent( "player_death", Event_PlayerDeath_Pre, EventHookMode_Pre );
+    HookEvent( "player_death", Event_PlayerDeath_Pre, EventHookMode_Pre );
     HookEvent( "player_death", Event_PlayerDeath );
-    HookEvent( "player_death", Event_PlayerDeathPost, EventHookMode_Post);
     HookEvent("round_start", Event_RoundStart);
 
     RegAdminCmd( "fof_gungame_restart", Command_RestartRound, ADMFLAG_GENERIC );
@@ -524,13 +523,6 @@ public Action:Timer_GetDrunk( Handle:hTimer, any:iUserID )
 	if( flDrunkness != 0.0 && 0 < iClient <= MaxClients && IsClientInGame( iClient ) && IsPlayerAlive( iClient ) )
 		SetEntPropFloat( iClient, Prop_Send, "m_flDrunkness", FloatMax( 0.0, GetEntPropFloat( iClient, Prop_Send, "m_flDrunkness" ) + flDrunkness ) );
 	return Plugin_Stop;
-}
-
-public Action:Event_PlayerDeathPost(Handle:event, const String:name[], bool:dontBroadcast)
-{
-    new victim = GetClientOfUserId(GetEventInt(event, "userid"));
-    new killer = GetClientOfUserId(GetEventInt(event, "attacker"));
-    new assist = GetClientOfUserId(GetEventInt(event, "assist"));
 }
 
 public Event_RoundStart(Event:event, const String:name[], bool:dontBroadcast)
