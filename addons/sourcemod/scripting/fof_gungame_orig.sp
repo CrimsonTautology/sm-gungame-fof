@@ -701,7 +701,6 @@ public Action:Timer_RespawnPlayers( Handle:hTimer )
             flStart[i] = GetGameTime();
             //SetClientNotoriety(i, iPlayerLevel[i]);
         }
-        ExtinguishClient( i );
     }
 
     CreateTimer( 0.05, Timer_RespawnPlayers_Fix, .flags = TIMER_FLAG_NO_MAPCHANGE );
@@ -774,11 +773,6 @@ public Action:Timer_UpdateEquipment( Handle:hTimer, any:iUserID )
 		return Plugin_Stop;
 	
 	bUpdateEquipment[iClient] = false;
-	
-	if( iClient == iWinner || iWinner <= 0 && iPlayerLevel[iClient] >= iMaxLevel )
-		IgniteEntity( iClient, 60.0 * 60.0 * 6.0, IsFakeClient( iClient ) );
-	else
-		ExtinguishClient( iClient );
 	
 	if( iWinner == iClient )
 		SetEntityHealth( iClient, 500 );
@@ -1121,19 +1115,6 @@ stock StripWeapons( iClient )
 			}
 		}
 		WriteLog( "StripWeapons(%d): end", iClient );
-	}
-
-stock ExtinguishClient( iClient )
-	if( 0 < iClient <= MaxClients && IsClientInGame( iClient ) )
-	{
-		WriteLog( "ExtinguishClient(%d): %L", iClient, iClient );
-		new iEntity = GetEntPropEnt( iClient, Prop_Data, "m_hEffectEntity" );
-		if( iEntity > 0 && IsValidEdict( iEntity ) )
-		{
-			WriteLog( "ExtinguishClient(%d): m_flLifetime = 0.0 (entity:%d)", iClient, iEntity );
-			SetEntPropFloat( iEntity, Prop_Data, "m_flLifetime", 0.0 ); 
-		}
-		WriteLog( "ExtinguishClient(%d): end", iClient );
 	}
 
 stock RestartTheGame()
