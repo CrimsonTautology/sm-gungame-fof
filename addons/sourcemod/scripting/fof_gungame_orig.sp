@@ -15,14 +15,15 @@
 	#define IN_FOF_SWITCH	(1<<14)
 #endif
 
-#define SOUND_LEVELUP  "music/bounty/bounty_objective_stinger1.mp3"
-#define SOUND_FINAL "music/bounty/bounty_objective_stinger2.mp3"
-#define SOUND_ROUNDWON  "music/round_end_stinger.mp3"
-#define SOUND_FIGHT  "music/standoff1.mp3"
-#define SOUND_HUMILIATION  "animals/chicken_pain1.wav"
-#define SOUND_LOSTLEAD  "music/most_wanted_stinger.wav"
-#define SOUND_TAKENLEAD  "music/kill4.wav"
-#define SOUND_TIEDLEAD  "music/kill3.wav"
+#define SOUND_LEVELUP       "music/bounty/bounty_objective_stinger1.mp3"
+#define SOUND_FINAL         "music/bounty/bounty_objective_stinger2.mp3"
+#define SOUND_ROUNDWON      "music/round_end_stinger.mp3"
+#define SOUND_FIGHT         "common/defeat.mp3"
+//#define SOUND_FIGHT         "music/standoff1.mp3"
+#define SOUND_HUMILIATION   "animals/chicken_pain1.wav"
+#define SOUND_LOSTLEAD      "music/most_wanted_stinger.wav"
+#define SOUND_TAKENLEAD     "music/kill4.wav"
+#define SOUND_TIEDLEAD      "music/kill3.wav"
 
 #define HUD1_X 0.18
 #define HUD1_Y 0.04
