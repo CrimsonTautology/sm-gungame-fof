@@ -60,7 +60,6 @@ new iWinner = 0;
 new String:szWinner[MAX_NAME_LENGTH];
 new iLeader = 0;
 new iMaxLevel = 1;
-new fof_teamplay = INVALID_ENT_REFERENCE;
 
 new iPlayerLevel[MAXPLAYERS+1];
 new bool:bUpdateEquipment[MAXPLAYERS+1];
@@ -166,8 +165,6 @@ public OnMapStart()
         bDeathmatch = ( GetConVarInt( mp_teamplay ) == 0 && GetConVarInt( fof_sv_currentmode ) == 1 );
     else
         SetFailState( "Missing mp_teamplay or/and fof_sv_currentmode console variable" );
-
-    fof_teamplay = INVALID_ENT_REFERENCE;
 
     iWinner = 0;
     szWinner[0] = '\0';
@@ -689,25 +686,6 @@ public Action:Timer_RespawnPlayers( Handle:hTimer )
 
     if( GetCommandFlags( "round_restart" ) != INVALID_FCVAR_FLAGS )
         ServerCommand( "round_restart" );
-    else
-    {
-        if( IsValidEdict( fof_teamplay ) )
-        {
-            new String:szClassname[16];
-            GetEntityClassname( fof_teamplay, szClassname, sizeof( szClassname ) );
-            if( strcmp( szClassname, "fof_teamplay" ) )
-                fof_teamplay = INVALID_ENT_REFERENCE;
-        }
-        else
-            fof_teamplay = INVALID_ENT_REFERENCE;
-        if( fof_teamplay == INVALID_ENT_REFERENCE && ( fof_teamplay = FindEntityByClassname( INVALID_ENT_REFERENCE, "fof_teamplay" ) ) == INVALID_ENT_REFERENCE )
-            fof_teamplay = CreateEntityByName( "fof_teamplay" );
-        if( fof_teamplay != INVALID_ENT_REFERENCE )
-        {
-            SetVariantInt( -1 );
-            AcceptEntityInput( fof_teamplay, "InputRespawnPlayers" );
-        }
-    }
 
     new iEntity = INVALID_ENT_REFERENCE;
     while( ( iEntity = FindEntityByClassname( iEntity, "weapon_*" ) ) != INVALID_ENT_REFERENCE )
