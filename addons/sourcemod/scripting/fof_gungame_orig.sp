@@ -412,9 +412,9 @@ public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontB
         strcopy( szWeapon, sizeof( szWeapon ), "weapon_machete" );
     else if( StrEqual( szWeapon, "rpg_missle" ) )
         strcopy( szWeapon, sizeof( szWeapon ), "weapon_rpg" );
-    if( StrEqual( szWeapon, "crossbow_bolt" ) )
+    else if( StrEqual( szWeapon, "crossbow_bolt" ) )
         strcopy( szWeapon, sizeof( szWeapon ), "weapon_crossbow" );
-    if( StrEqual( szWeapon, "grenade_ar2" ) )
+    else if( StrEqual( szWeapon, "grenade_ar2" ) )
         strcopy( szWeapon, sizeof( szWeapon ), "weapon_ar2" );
     else if( StrEqual( szWeapon, "blast" ) )
         strcopy( szWeapon, sizeof( szWeapon ), szLastWeaponFired[iKiller] );
@@ -773,13 +773,13 @@ public Action:Timer_UpdateEquipment( Handle:hTimer, any:iUserID )
         }
 
         new Handle:hPack1;
-        if(g_Timer_GiveWeapon1[iClient] != INVALID_HANDLE) KillTimer(g_Timer_GiveWeapon1[iClient]);
+        if(g_Timer_GiveWeapon1[iClient] != INVALID_HANDLE) CloseHandle(g_Timer_GiveWeapon1[iClient]);
         g_Timer_GiveWeapon1[iClient] = CreateDataTimer( flEquipDelay + 0.05, Timer_GiveWeapon, hPack1, TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE );
         WritePackCell( hPack1, iUserID );
         WritePackString( hPack1, szPlayerWeapon[0] );
 
         new Handle:hPack2;
-        if(g_Timer_GiveWeapon2[iClient] != INVALID_HANDLE) KillTimer(g_Timer_GiveWeapon2[iClient]);
+        if(g_Timer_GiveWeapon2[iClient] != INVALID_HANDLE) CloseHandle(g_Timer_GiveWeapon2[iClient]);
         g_Timer_GiveWeapon2[iClient] = CreateDataTimer( flEquipDelay + 0.18, Timer_GiveWeapon, hPack2, TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE );
         WritePackCell( hPack2, iUserID );
         WritePackString( hPack2, szPlayerWeapon[1] );
@@ -796,6 +796,11 @@ public Action:Timer_GiveWeapon( Handle:hTimer, Handle:hPack )
 
     new iUserID = ReadPackCell( hPack );
     new iClient = GetClientOfUserId( iUserID );
+
+    //TODO FIXME
+    g_Timer_GiveWeapon1[iClient] = INVALID_HANDLE;
+    g_Timer_GiveWeapon2[iClient] = INVALID_HANDLE;
+
     if( !( 0 < iClient <= MaxClients && IsClientInGame( iClient ) && IsPlayerAlive( iClient ) ) )
         return Plugin_Stop;
 
