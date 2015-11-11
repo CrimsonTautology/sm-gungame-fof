@@ -407,6 +407,8 @@ public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontB
         strcopy( szWeapon, sizeof( szWeapon ), "weapon_knife" );
     else if( StrEqual( szWeapon, "thrown_machete" ) )
         strcopy( szWeapon, sizeof( szWeapon ), "weapon_machete" );
+    else if( StrEqual( szWeapon, "rpg_missle" ) )
+        strcopy( szWeapon, sizeof( szWeapon ), "weapon_rpg" );
     else if( StrEqual( szWeapon, "blast" ) )
         strcopy( szWeapon, sizeof( szWeapon ), szLastWeaponFired[iKiller] );
     else
