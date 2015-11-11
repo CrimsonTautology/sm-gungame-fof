@@ -75,8 +75,8 @@ new Float:flStart[MAXPLAYERS+1];
 new bool:bInTheLead[MAXPLAYERS+1];
 new bool:bWasInTheLead[MAXPLAYERS+1];
 
-new Handle:g_Timer_GiveWeapon1[MAXPLAYERS+1];
-new Handle:g_Timer_GiveWeapon2[MAXPLAYERS+1];
+new Handle:g_Timer_GiveWeapon1[MAXPLAYERS+1] = {INVALID_HANDLE, ...};
+new Handle:g_Timer_GiveWeapon2[MAXPLAYERS+1] = {INVALID_HANDLE, ...};
 
 public Plugin:myinfo =
 {
@@ -773,13 +773,13 @@ public Action:Timer_UpdateEquipment( Handle:hTimer, any:iUserID )
         }
 
         new Handle:hPack1;
-        KillTimer(g_Timer_GiveWeapon1[iClient]);
+        if(g_Timer_GiveWeapon1[iClient] != INVALID_HANDLE) KillTimer(g_Timer_GiveWeapon1[iClient]);
         g_Timer_GiveWeapon1[iClient] = CreateDataTimer( flEquipDelay + 0.05, Timer_GiveWeapon, hPack1, TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE );
         WritePackCell( hPack1, iUserID );
         WritePackString( hPack1, szPlayerWeapon[0] );
 
         new Handle:hPack2;
-        KillTimer(g_Timer_GiveWeapon2[iClient]);
+        if(g_Timer_GiveWeapon2[iClient] != INVALID_HANDLE) KillTimer(g_Timer_GiveWeapon2[iClient]);
         g_Timer_GiveWeapon2[iClient] = CreateDataTimer( flEquipDelay + 0.18, Timer_GiveWeapon, hPack2, TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE );
         WritePackCell( hPack2, iUserID );
         WritePackString( hPack2, szPlayerWeapon[1] );
