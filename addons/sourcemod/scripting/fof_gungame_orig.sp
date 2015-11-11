@@ -764,12 +764,12 @@ public Action:Timer_UpdateEquipment( Handle:hTimer, any:iUserID )
         }
 
         new Handle:hPack1;
-        CreateDataTimer( flEquipDelay + 0.20, Timer_GiveWeapon, hPack1, TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE );
+        CreateDataTimer( flEquipDelay + 0.05, Timer_GiveWeapon, hPack1, TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE );
         WritePackCell( hPack1, iUserID );
         WritePackString( hPack1, szPlayerWeapon[0] );
 
         new Handle:hPack2;
-        CreateDataTimer( flEquipDelay + 0.32, Timer_GiveWeapon, hPack2, TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE );
+        CreateDataTimer( flEquipDelay + 0.18, Timer_GiveWeapon, hPack2, TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE );
         WritePackCell( hPack2, iUserID );
         WritePackString( hPack2, szPlayerWeapon[1] );
 
