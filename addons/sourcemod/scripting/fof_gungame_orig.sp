@@ -22,7 +22,9 @@
 //#define SOUND_FIGHT         "music/standoff1.mp3"
 #define SOUND_HUMILIATION   "animals/chicken_pain1.wav"
 #define SOUND_LOSTLEAD      "music/most_wanted_stinger.wav"
-#define SOUND_TAKENLEAD     "music/kill4.wav"
+//#define SOUND_TAKENLEAD     "music/kill4.wav"
+//#define SOUND_TIEDLEAD      "music/kill3.wav"
+#define SOUND_TAKENLEAD     "halloween/ragged_powerup.wav"
 #define SOUND_TIEDLEAD      "music/kill3.wav"
 
 #define HUD1_X 0.18
@@ -773,13 +775,13 @@ public Action:Timer_UpdateEquipment( Handle:hTimer, any:iUserID )
         }
 
         new Handle:hPack1;
-        if(g_Timer_GiveWeapon1[iClient] != INVALID_HANDLE) CloseHandle(g_Timer_GiveWeapon1[iClient]);
+        //if(g_Timer_GiveWeapon1[iClient] != INVALID_HANDLE) CloseHandle(g_Timer_GiveWeapon1[iClient]);
         g_Timer_GiveWeapon1[iClient] = CreateDataTimer( flEquipDelay + 0.05, Timer_GiveWeapon, hPack1, TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE );
         WritePackCell( hPack1, iUserID );
         WritePackString( hPack1, szPlayerWeapon[0] );
 
         new Handle:hPack2;
-        if(g_Timer_GiveWeapon2[iClient] != INVALID_HANDLE) CloseHandle(g_Timer_GiveWeapon2[iClient]);
+        //if(g_Timer_GiveWeapon2[iClient] != INVALID_HANDLE) CloseHandle(g_Timer_GiveWeapon2[iClient]);
         g_Timer_GiveWeapon2[iClient] = CreateDataTimer( flEquipDelay + 0.18, Timer_GiveWeapon, hPack2, TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE );
         WritePackCell( hPack2, iUserID );
         WritePackString( hPack2, szPlayerWeapon[1] );
@@ -798,8 +800,8 @@ public Action:Timer_GiveWeapon( Handle:hTimer, Handle:hPack )
     new iClient = GetClientOfUserId( iUserID );
 
     //TODO FIXME
-    g_Timer_GiveWeapon1[iClient] = INVALID_HANDLE;
-    g_Timer_GiveWeapon2[iClient] = INVALID_HANDLE;
+    //g_Timer_GiveWeapon1[iClient] = INVALID_HANDLE;
+    //g_Timer_GiveWeapon2[iClient] = INVALID_HANDLE;
 
     if( !( 0 < iClient <= MaxClients && IsClientInGame( iClient ) && IsPlayerAlive( iClient ) ) )
         return Plugin_Stop;
