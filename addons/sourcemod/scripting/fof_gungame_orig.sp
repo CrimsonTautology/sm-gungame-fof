@@ -412,11 +412,13 @@ public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontB
         strcopy( szWeapon, sizeof( szWeapon ), "weapon_knife" );
     else if( StrEqual( szWeapon, "thrown_machete" ) )
         strcopy( szWeapon, sizeof( szWeapon ), "weapon_machete" );
-    else if( StrEqual( szWeapon, "rpg_missle" ) )
+    else if( StrEqual( szWeapon, "rpg_missile" ) )
         strcopy( szWeapon, sizeof( szWeapon ), "weapon_rpg" );
     else if( StrEqual( szWeapon, "crossbow_bolt" ) )
         strcopy( szWeapon, sizeof( szWeapon ), "weapon_crossbow" );
     else if( StrEqual( szWeapon, "grenade_ar2" ) )
+        strcopy( szWeapon, sizeof( szWeapon ), "weapon_ar2" );
+    else if( StrEqual( szWeapon, "weapon_ar2" ) )
         strcopy( szWeapon, sizeof( szWeapon ), "weapon_ar2" );
     else if( StrEqual( szWeapon, "blast" ) )
         strcopy( szWeapon, sizeof( szWeapon ), szLastWeaponFired[iKiller] );
