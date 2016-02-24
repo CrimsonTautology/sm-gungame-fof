@@ -6,7 +6,7 @@
 #undef REQUIRE_EXTENSIONS
 #tryinclude <steamworks>
 
-#define PLUGIN_VERSION		"1.3-20150529"
+#define PLUGIN_VERSION		"1.3.1custom"
 #define CHAT_PREFIX			"\x04 GG \x07FFDA00 "
 #define CONSOLE_PREFIX		"- GG: "
 //#define DEBUG				true
@@ -18,14 +18,17 @@
 #define SOUND_LEVELUP       "music/bounty/bounty_objective_stinger1.mp3"
 #define SOUND_FINAL         "music/bounty/bounty_objective_stinger2.mp3"
 #define SOUND_ROUNDWON      "music/round_end_stinger.mp3"
-#define SOUND_FIGHT         "common/defeat.mp3"
-//#define SOUND_FIGHT         "music/standoff1.mp3"
 #define SOUND_HUMILIATION   "animals/chicken_pain1.wav"
 #define SOUND_LOSTLEAD      "music/most_wanted_stinger.wav"
-//#define SOUND_TAKENLEAD     "music/kill4.wav"
-//#define SOUND_TIEDLEAD      "music/kill3.wav"
 #define SOUND_TAKENLEAD     "halloween/ragged_powerup.wav"
 #define SOUND_TIEDLEAD      "music/kill3.wav"
+
+new String:g_RoundStartSounds[][] =
+{
+    "common/defeat.mp3",
+    "common/victory.mp3",
+    "music/standoff1.mp3",
+};
 
 #define HUD1_X 0.18
 #define HUD1_Y 0.04
@@ -188,11 +191,14 @@ public OnMapStart()
     PrecacheSound( SOUND_LEVELUP, true );
     PrecacheSound( SOUND_FINAL, true );
     PrecacheSound( SOUND_ROUNDWON, true );
-    PrecacheSound( SOUND_FIGHT, true );
     PrecacheSound( SOUND_HUMILIATION, true );
     PrecacheSound( SOUND_LOSTLEAD, true );
     PrecacheSound( SOUND_TAKENLEAD, true );
     PrecacheSound( SOUND_TIEDLEAD, true );
+    for(new i=0; i < sizeof(g_RoundStartSounds); i++)
+    {
+        PrecacheSound(g_RoundStartSounds[i]);
+    }
 
     CreateTimer( 1.0, Timer_UpdateHUD, .flags = TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE );
 }
@@ -721,7 +727,7 @@ public Action:Timer_RespawnPlayers_Fix( Handle:hTimer )
 
     new timeleft;
     if( GetMapTimeLeft( timeleft ) && timeleft > 0 )
-        EmitSoundToAll( SOUND_FIGHT);
+        EmitSoundToAll( g_RoundStartSounds[GetRandomInt(0, sizeof(g_RoundStartSounds) - 1)]);
 
     return Plugin_Stop;
 }
