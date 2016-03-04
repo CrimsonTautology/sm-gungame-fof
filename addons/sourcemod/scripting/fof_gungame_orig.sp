@@ -655,6 +655,7 @@ public Hook_OnPlayerResourceThinkPost(ent)
         if(!IsClientInGame(client)) continue;
 
         SetEntProp(ent, Prop_Send, "m_iExp", iPlayerLevel[client], _, client);
+        SetEntProp(client, Prop_Send, "m_nLastRoundNotoriety", iPlayerLevel[client]),
     }
 
 }
