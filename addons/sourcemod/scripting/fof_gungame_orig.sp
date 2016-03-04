@@ -650,7 +650,7 @@ public Hook_WeaponSwitchPost( iClient, iWeapon )
 
 public Hook_OnPlayerResourceThinkPost(ent)
 {
-    for(new client = 1; client <= MaxClients; client++)
+    for(new client = 1; client <= MaxClients + 1; client++)
     {
         if(!IsClientInGame(client)) continue;
 
