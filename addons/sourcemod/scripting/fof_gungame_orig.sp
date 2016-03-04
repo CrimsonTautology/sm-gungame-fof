@@ -6,7 +6,7 @@
 #undef REQUIRE_EXTENSIONS
 #tryinclude <steamworks>
 
-#define PLUGIN_VERSION		"1.3.1custom"
+#define PLUGIN_VERSION		"1.3.2custom"
 #define CHAT_PREFIX			"\x04 GG \x07FFDA00 "
 #define CONSOLE_PREFIX		"- GG: "
 //#define DEBUG				true
@@ -79,6 +79,7 @@ new bool:bFirstSpawn[MAXPLAYERS+1];
 new Float:flStart[MAXPLAYERS+1];
 new bool:bInTheLead[MAXPLAYERS+1];
 new bool:bWasInTheLead[MAXPLAYERS+1];
+new bool:bUpdateScore[MAXPLAYERS+1];
 
 new Handle:g_Timer_GiveWeapon1[MAXPLAYERS+1] = {INVALID_HANDLE, ...};
 new Handle:g_Timer_GiveWeapon2[MAXPLAYERS+1] = {INVALID_HANDLE, ...};
@@ -180,6 +181,7 @@ public OnMapStart()
     for( new i = 0; i < sizeof( iPlayerLevel ); i++ )
     {
         iPlayerLevel[i] = 1;
+        bUpdateScore[i] = true;
         flLastKill[i] = 0.0;
         flLastLevelUP[i] = 0.0;
         flLastUse[i] = 0.0;
@@ -201,6 +203,8 @@ public OnMapStart()
     }
 
     CreateTimer( 1.0, Timer_UpdateHUD, .flags = TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE );
+
+    SDKHook(GetPlayerResourceEntity(), SDKHook_ThinkPost, Hook_OnPlayerResourceThinkPost);
 }
 
 RemoveCrates()
@@ -316,6 +320,7 @@ public Event_PlayerActivate( Handle:hEvent, const String:szEventName[], bool:bDo
 	if( 0 < iClient <= MaxClients )
 	{
         iPlayerLevel[ iClient ] = 1;
+        bUpdateScore[ iClient] = true;
         flLastKill[ iClient ] = 0.0;
         flLastLevelUP[ iClient ] = 0.0;
         flLastUse[ iClient ] = 0.0;
@@ -376,6 +381,7 @@ public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontB
         if( !bSuicides && iPlayerLevel[iKiller] > 1 )
         {
             iPlayerLevel[iVictim]--;
+            bUpdateScore[iVictim] = true;
             LeaderCheck();
 
             PrintCenterText( iVictim, "Ungraceful death! You are now level %d of %d.", iPlayerLevel[iVictim], iMaxLevel );
@@ -401,6 +407,7 @@ public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontB
         && iPlayerLevel[iVictim] > 1 && 0 < iKiller <= MaxClients)
     {
         iPlayerLevel[iVictim]--;
+        bUpdateScore[iVictim] = true;
         LeaderCheck();
 
         PrintCenterTextAll("%N was humiliated by %N and lost a level!", iVictim, iKiller);
@@ -462,9 +469,11 @@ public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontB
 
     flLastLevelUP[iKiller] = flCurTime + flEquipDelay;
     iPlayerLevel[iKiller]++;
+    bUpdateScore[iKiller] = true;
     if( iPlayerLevel[iKiller] > iMaxLevel )
     {
         iPlayerLevel[iKiller] = iMaxLevel;
+        bUpdateScore[iKiller] = true;
         iWinner = iKiller;
         GetClientName( iKiller, szWinner, sizeof( szWinner ) );
 
@@ -495,6 +504,7 @@ public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontB
             if( i != iKiller )
             {
                 iPlayerLevel[i] = 1;
+                bUpdateScore[i] = true;
                 flStart[i] = 0.0;
             }
             if( IsClientInGame( i ) )
@@ -549,6 +559,7 @@ public Event_RoundStart(Event:event, const String:name[], bool:dontBroadcast)
     for( new i = 0; i < sizeof( iPlayerLevel ); i++ )
     {
         iPlayerLevel[i] = 1;
+        bUpdateScore[i] = true;
         flLastKill[i] = 0.0;
         flLastLevelUP[i] = 0.0;
         flLastUse[i] = 0.0;
@@ -644,6 +655,19 @@ public Hook_WeaponSwitchPost( iClient, iWeapon )
         CloseHandle( hAllowedWeapons );
         WriteLog( "Hook_WeaponSwitchPost(%d): end", iClient );
     }
+}
+
+public Hook_OnPlayerResourceThinkPost(ent)
+{
+    for(new client = 1; client <= MaxClients; client++)
+    {
+        if(!IsClientInGame(client)) continue;
+        if(!bUpdateScore[client]) continue;
+
+        SetEntProp(ent, Prop_Send, "m_iExp", iPlayerLevel[client], _, client);
+        bUpdateScore[client] = false;
+    }
+
 }
 
 public Action:Timer_RespawnAnnounce( Handle:hTimer, any:iUserID )
