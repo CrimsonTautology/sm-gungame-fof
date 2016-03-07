@@ -496,7 +496,7 @@ public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontB
         {
             if( i != iKiller )
             {
-                iPlayerLevel[i] = 1;
+                //iPlayerLevel[i] = 1;
                 flStart[i] = 0.0;
             }
             if( IsClientInGame( i ) )
@@ -650,7 +650,7 @@ public Hook_WeaponSwitchPost( iClient, iWeapon )
 
 public Hook_OnPlayerResourceThinkPost(ent)
 {
-    new client, level;
+    new client, level, frags;
     for(client = 1; client <= MaxClients; client++)
     {
         if(!IsClientInGame(client)) continue;
