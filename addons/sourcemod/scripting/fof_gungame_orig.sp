@@ -650,14 +650,16 @@ public Hook_WeaponSwitchPost( iClient, iWeapon )
 
 public Hook_OnPlayerResourceThinkPost(ent)
 {
-    new client, level, frags;
+    new client, level, score;
     for(client = 1; client <= MaxClients; client++)
     {
         if(!IsClientInGame(client)) continue;
 
         level = Int32Max(iPlayerLevel[client], 0);
-        SetEntProp(ent, Prop_Send, "m_iExp", iPlayerLevel[client], _, client);
-        SetEntProp(client, Prop_Send, "m_nLastRoundNotoriety", iPlayerLevel[client]);
+        score = GetEntProp(client, Prop_Send, "m_nLastRoundNotoriety");
+        SetEntProp(ent, Prop_Send, "m_iExp", level, _, client);
+        SetEntProp(ent, Prop_Send, "m_iScore", score, _, client);
+        //SetEntProp(client, Prop_Send, "m_nLastRoundNotoriety", iPlayerLevel[client]);
     }
 
 }
