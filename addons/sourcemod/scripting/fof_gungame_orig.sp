@@ -1218,19 +1218,23 @@ stock Float:FloatMax( Float:flValue1, Float:flValue2 )
 
 public Action:Command_DumpScores(caller, args)
 {
+    PrintToConsole(caller, "---------------------------------");
+    PrintToConsole(caller, "Leader: %d", iLeader);
+    PrintToConsole(caller, "---------------------------------");
     PrintToConsole(caller, "level notoriety frags deaths user");
     for (new client=1; client <= MaxClients; client++)
     {
         if(!IsClientInGame(client) || IsFakeClient(client))
             continue;
 
-        PrintToConsole(caller, "%5d %9d %5d %6d %L %s",
+        PrintToConsole(caller, "%5d %9d %5d %6d %L",
                 iPlayerLevel[client],
                 GetEntProp(client, Prop_Send, "m_nLastRoundNotoriety"),
                 GetEntProp(client, Prop_Data, "m_iFrags"),
                 GetEntProp(client, Prop_Data, "m_iDeaths"),
-                client,
-                szLastWeaponFired[client]);
+                client
+                );
     }
+    PrintToConsole(caller, "---------------------------------");
     return Plugin_Handled;
 }
