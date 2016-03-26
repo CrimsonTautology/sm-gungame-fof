@@ -6,7 +6,7 @@
 #undef REQUIRE_EXTENSIONS
 #tryinclude <steamworks>
 
-#define PLUGIN_VERSION		"1.3.2custom"
+#define PLUGIN_VERSION		"1.3.3custom"
 #define CHAT_PREFIX			"\x04 GG \x07FFDA00 "
 #define CONSOLE_PREFIX		"- GG: "
 //#define DEBUG				true
