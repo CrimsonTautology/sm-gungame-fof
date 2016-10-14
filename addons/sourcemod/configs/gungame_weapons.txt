@@ -62,7 +62,8 @@
 	}
 	"16"
 	{
-		"weapon_sawedoff_shotgun"	""
+		//"weapon_sawedoff_shotgun"	""
+		"weapon_ghostgun"	"weapon_ghostgun"
 	}
 	"17"
 	{
