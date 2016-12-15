@@ -42,34 +42,37 @@
 	}
 	"11"
 	{
-		"weapon_axe"	""
+		"weapon_remington_army"	""
 	}
 	"12"
 	{
-		"weapon_coltnavy"	""
+		"weapon_axe"	""
 	}
 	"13"
 	{
-		"weapon_volcanic"	""
+		"weapon_coltnavy"	""
 	}
 	"14"
 	{
-		"weapon_bow"	""
+		"weapon_volcanic"	""
 	}
 	"15"
 	{
-		"weapon_deringer"	"weapon_deringer"
+		"weapon_bow"	""
 	}
 	"16"
 	{
-		//"weapon_sawedoff_shotgun"	""
-		"weapon_ghostgun"	"weapon_ghostgun"
+		"weapon_deringer"	"weapon_deringer"
 	}
 	"17"
 	{
-		"weapon_dynamite"	""
+		"weapon_sawedoff_shotgun"	""
 	}
 	"18"
+	{
+		"weapon_dynamite"	""
+	}
+	"19"
 	{
 		"weapon_knife"	""
 	}
