@@ -8,7 +8,7 @@
 
 #define PLUGIN_VERSION		"1.3.3custom"
 #define CHAT_PREFIX			"\x04 GG \x07FFDA00 "
-#define CONSOLE_PREFIX		"- GG: "
+#define CONSOLE_PREFIX		"[GunGame]"
 //#define DEBUG				true
 
 #if !defined IN_FOF_SWITCH
