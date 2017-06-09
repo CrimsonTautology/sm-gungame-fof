@@ -216,9 +216,6 @@ RemoveCrates()
 
 public OnConfigsExecuted()
 {
-	if( !GetConVarBool( fof_gungame_enabled ) || !bDeathmatch )
-		SetFailState( "The plugin is disabled due to server configuration" );
-	
 	SetGameDescription( "Gun Game", true );
 	
 	AllowMapEnd( false );
