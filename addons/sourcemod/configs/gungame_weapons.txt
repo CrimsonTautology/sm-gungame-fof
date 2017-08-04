@@ -18,61 +18,65 @@
 	}
 	"5"
 	{
-		"weapon_peacemaker"	""
+		"weapon_spencer"	""
 	}
 	"6"
 	{
-		"weapon_coachgun"	""
+		"weapon_peacemaker"	""
 	}
 	"7"
 	{
-		"weapon_henryrifle"	""
+		"weapon_coachgun"	""
 	}
 	"8"
 	{
-		"weapon_schofield"	""
+		"weapon_henryrifle"	""
 	}
 	"9"
 	{
-		"weapon_maresleg"	""
+		"weapon_schofield"	""
 	}
 	"10"
 	{
-		"weapon_carbine"	""
+		"weapon_maresleg"	""
 	}
 	"11"
 	{
-		"weapon_remington_army"	""
+		"weapon_carbine"	""
 	}
 	"12"
 	{
-		"weapon_axe"	""
+		"weapon_remington_army"	""
 	}
 	"13"
 	{
-		"weapon_coltnavy"	""
+		"weapon_axe"	""
 	}
 	"14"
 	{
-		"weapon_volcanic"	""
+		"weapon_coltnavy"	""
 	}
 	"15"
 	{
-		"weapon_bow"	""
+		"weapon_volcanic"	""
 	}
 	"16"
 	{
-		"weapon_deringer"	"weapon_deringer"
+		"weapon_bow"	""
 	}
 	"17"
 	{
-		"weapon_sawedoff_shotgun"	""
+		"weapon_deringer"	"weapon_deringer"
 	}
 	"18"
 	{
-		"weapon_dynamite"	""
+		"weapon_sawedoff_shotgun"	""
 	}
 	"19"
+	{
+		"weapon_dynamite"	""
+	}
+	"20"
 	{
 		"weapon_knife"	""
 	}
