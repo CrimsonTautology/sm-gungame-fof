@@ -6,7 +6,7 @@
 #undef REQUIRE_EXTENSIONS
 #tryinclude <steamworks>
 
-#define PLUGIN_VERSION		"1.3.3custom"
+#define PLUGIN_VERSION		"1.3.4custom"
 #define CHAT_PREFIX			"\x04 GG \x07FFDA00 "
 #define CONSOLE_PREFIX		"[GunGame] "
 //#define DEBUG				true
@@ -100,18 +100,18 @@ public APLRes:AskPluginLoad2( Handle:hPlugin, bool:bLateLoad, String:szError[], 
 
 public OnPluginStart()
 {
-    sm_fof_gg_version = CreateConVar( "sm_fof_gg_version", PLUGIN_VERSION, "FoF Gun Game Plugin Version", FCVAR_PLUGIN|FCVAR_NOTIFY|FCVAR_REPLICATED|FCVAR_SPONLY|FCVAR_DONTRECORD );
+    sm_fof_gg_version = CreateConVar( "sm_fof_gg_version", PLUGIN_VERSION, "FoF Gun Game Plugin Version", FCVAR_NOTIFY|FCVAR_REPLICATED|FCVAR_SPONLY|FCVAR_DONTRECORD );
     SetConVarString( sm_fof_gg_version, PLUGIN_VERSION );
     HookConVarChange( sm_fof_gg_version, OnVerConVarChanged );
 
-    fof_gungame_enabled = CreateConVar( "fof_gungame_enabled", "0", _, FCVAR_PLUGIN|FCVAR_NOTIFY, true, 0.0, true, 1.0 );
-    HookConVarChange( fof_gungame_config = CreateConVar( "fof_gungame_config", "gungame_weapons.txt", _, FCVAR_PLUGIN ), OnCfgConVarChanged );
-    HookConVarChange( fof_gungame_fists = CreateConVar( "fof_gungame_fists", "1", "Allow or disallow fists.", FCVAR_PLUGIN|FCVAR_NOTIFY, true, 0.0, true, 1.0 ), OnConVarChanged );
-    HookConVarChange( fof_gungame_equip_delay = CreateConVar( "fof_gungame_equip_delay", "0.0", "Seconds before giving new equipment.", FCVAR_PLUGIN|FCVAR_NOTIFY, true, 0.0 ), OnConVarChanged );
-    HookConVarChange( fof_gungame_heal = CreateConVar( "fof_gungame_heal", "25", "Amount of health to restore on each kill.", FCVAR_PLUGIN|FCVAR_NOTIFY, true, 0.0 ), OnConVarChanged );
-    HookConVarChange( fof_gungame_drunkness = CreateConVar( "fof_gungame_drunkness", "6.0", _, FCVAR_PLUGIN|FCVAR_NOTIFY ), OnConVarChanged );
-    HookConVarChange( fof_gungame_suicides = CreateConVar( "fof_gungame_suicides", "1", "Set 0 to disallow suicides, level down for it.", FCVAR_PLUGIN|FCVAR_NOTIFY ), OnConVarChanged );
-    HookConVarChange( fof_gungame_logfile = CreateConVar( "fof_gungame_logfile", "", _, FCVAR_PLUGIN ), OnConVarChanged );
+    fof_gungame_enabled = CreateConVar( "fof_gungame_enabled", "0", _, FCVAR_NOTIFY, true, 0.0, true, 1.0 );
+    HookConVarChange( fof_gungame_config = CreateConVar( "fof_gungame_config", "gungame_weapons.txt", _, 0 ), OnCfgConVarChanged );
+    HookConVarChange( fof_gungame_fists = CreateConVar( "fof_gungame_fists", "1", "Allow or disallow fists.", FCVAR_NOTIFY, true, 0.0, true, 1.0 ), OnConVarChanged );
+    HookConVarChange( fof_gungame_equip_delay = CreateConVar( "fof_gungame_equip_delay", "0.0", "Seconds before giving new equipment.", FCVAR_NOTIFY, true, 0.0 ), OnConVarChanged );
+    HookConVarChange( fof_gungame_heal = CreateConVar( "fof_gungame_heal", "25", "Amount of health to restore on each kill.", FCVAR_NOTIFY, true, 0.0 ), OnConVarChanged );
+    HookConVarChange( fof_gungame_drunkness = CreateConVar( "fof_gungame_drunkness", "6.0", _, FCVAR_NOTIFY ), OnConVarChanged );
+    HookConVarChange( fof_gungame_suicides = CreateConVar( "fof_gungame_suicides", "1", "Set 0 to disallow suicides, level down for it.", FCVAR_NOTIFY ), OnConVarChanged );
+    HookConVarChange( fof_gungame_logfile = CreateConVar( "fof_gungame_logfile", "", _, 0 ), OnConVarChanged );
     fof_sv_dm_timer_ends_map = FindConVar( "fof_sv_dm_timer_ends_map" );
     HookConVarChange( mp_bonusroundtime = FindConVar( "mp_bonusroundtime" ), OnConVarChanged );
     AutoExecConfig();
