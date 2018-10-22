@@ -64,19 +64,23 @@
 	{
 		"weapon_bow"	""
 	}
-	"17"
+    "17"
+    {
+        "weapon_hammerless" ""
+    }
+	"18"
 	{
 		"weapon_deringer"	"weapon_deringer"
 	}
-	"18"
+	"19"
 	{
 		"weapon_sawedoff_shotgun"	""
 	}
-	"19"
+	"20"
 	{
 		"weapon_dynamite"	""
 	}
-	"20"
+	"21"
 	{
 		"weapon_knife"	""
 	}
