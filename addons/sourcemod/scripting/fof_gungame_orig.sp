@@ -6,7 +6,7 @@
 #undef REQUIRE_EXTENSIONS
 #tryinclude <steamworks>
 
-#define PLUGIN_VERSION		"1.3.4custom"
+#define PLUGIN_VERSION		"2.0.0pre"
 #define CHAT_PREFIX			"\x04 GG \x07FFDA00 "
 #define CONSOLE_PREFIX		"[GunGame] "
 //#define DEBUG				true
@@ -15,6 +15,7 @@
 	#define IN_FOF_SWITCH	(1<<14)
 #endif
 
+#define GAME_DESCRIPTION    "Gun Game"
 #define SOUND_LEVELUP       "music/bounty/bounty_objective_stinger1.mp3"
 #define SOUND_FINAL         "music/bounty/bounty_objective_stinger2.mp3"
 #define SOUND_ROUNDWON      "music/round_end_stinger.mp3"
@@ -37,7 +38,6 @@ new String:g_RoundStartSounds[][] =
 #define HUD2_Y 0.10
 
 new Handle:sm_fof_gg_version = INVALID_HANDLE;
-new Handle:fof_gungame_enabled = INVALID_HANDLE;
 new Handle:fof_gungame_config = INVALID_HANDLE;
 new Handle:fof_gungame_fists = INVALID_HANDLE;
 new Handle:fof_gungame_equip_delay = INVALID_HANDLE;
@@ -57,7 +57,6 @@ new String:szLogFile[PLATFORM_MAX_PATH];
 new Float:flBonusRoundTime = 5.0;
 
 new bool:bLateLoaded = false;
-new bool:bDeathmatch = false;
 new Handle:hHUDSync1 = INVALID_HANDLE;
 new Handle:hHUDSync2 = INVALID_HANDLE;
 new Handle:hWeapons = INVALID_HANDLE;
@@ -83,6 +82,8 @@ new bool:bWasInTheLead[MAXPLAYERS+1];
 new Handle:g_Timer_GiveWeapon1[MAXPLAYERS+1] = {INVALID_HANDLE, ...};
 new Handle:g_Timer_GiveWeapon2[MAXPLAYERS+1] = {INVALID_HANDLE, ...};
 
+new bool:g_AutoSetGameDescription = false;
+
 public Plugin:myinfo =
 {
 	name = "[FoF] Gun Game",
@@ -104,7 +105,7 @@ public OnPluginStart()
     SetConVarString( sm_fof_gg_version, PLUGIN_VERSION );
     HookConVarChange( sm_fof_gg_version, OnVerConVarChanged );
 
-    fof_gungame_enabled = CreateConVar( "fof_gungame_enabled", "0", _, FCVAR_NOTIFY, true, 0.0, true, 1.0 );
+    CreateConVar( "fof_gungame_enabled", "0", _, FCVAR_NOTIFY, true, 0.0, true, 1.0 );
     HookConVarChange( fof_gungame_config = CreateConVar( "fof_gungame_config", "gungame_weapons.txt", _, 0 ), OnCfgConVarChanged );
     HookConVarChange( fof_gungame_fists = CreateConVar( "fof_gungame_fists", "1", "Allow or disallow fists.", FCVAR_NOTIFY, true, 0.0, true, 1.0 ), OnConVarChanged );
     HookConVarChange( fof_gungame_equip_delay = CreateConVar( "fof_gungame_equip_delay", "0.0", "Seconds before giving new equipment.", FCVAR_NOTIFY, true, 0.0 ), OnConVarChanged );
@@ -150,7 +151,6 @@ public OnPluginStart()
 public OnPluginEnd()
 {
 	AllowMapEnd( true );
-	//SetGameDescription( "Gun Game", false );
 }
 
 public OnClientDisconnect_Post( iClient )
@@ -168,10 +168,11 @@ public OnMapStart()
 {
     new Handle:mp_teamplay = FindConVar( "mp_teamplay" );
     new Handle:fof_sv_currentmode = FindConVar( "fof_sv_currentmode" );
-    if( mp_teamplay != INVALID_HANDLE && fof_sv_currentmode != INVALID_HANDLE )
-        bDeathmatch = ( GetConVarInt( mp_teamplay ) == 0 && GetConVarInt( fof_sv_currentmode ) == 1 );
-    else
+    if( mp_teamplay != INVALID_HANDLE && fof_sv_currentmode != INVALID_HANDLE ){
+        //bDeathmatch = ( GetConVarInt( mp_teamplay ) == 0 && GetConVarInt( fof_sv_currentmode ) == 1 );
+    } else {
         SetFailState( "Missing mp_teamplay or/and fof_sv_currentmode console variable" );
+    }
 
     iWinner = 0;
     szWinner[0] = '\0';
@@ -200,7 +201,8 @@ public OnMapStart()
         PrecacheSound(g_RoundStartSounds[i]);
     }
 
-    CreateTimer( 1.0, Timer_UpdateHUD, .flags = TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE );
+    g_AutoSetGameDescription = true;
+    CreateTimer(1.0, Timer_Repeat, .flags = TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 
     SDKHook(GetPlayerResourceEntity(), SDKHook_ThinkPost, Hook_OnPlayerResourceThinkPost);
 }
@@ -216,7 +218,7 @@ RemoveCrates()
 
 public OnConfigsExecuted()
 {
-	SetGameDescription( "Gun Game", true );
+	SetGameDescription(GAME_DESCRIPTION);
 	
 	AllowMapEnd( false );
 	
@@ -347,7 +349,7 @@ public Event_PlayerSpawn( Handle:hEvent, const String:szEventName[], bool:bDontB
 public Event_PlayerShoot( Handle:hEvent, const String:szEventName[], bool:bDontBroadcast )
 {
     new iClient = GetClientOfUserId(GetEventInt(hEvent, "userid"));
-    if(0 <= iClient < MaxClients)
+    if(0 < iClient <= MaxClients)
     {
         GetEventString(hEvent, "weapon", szLastWeaponFired[iClient], sizeof(szLastWeaponFired[]));
     }
@@ -880,8 +882,18 @@ public Action:Timer_UseWeapon( Handle:hTimer, Handle:hPack )
     return Plugin_Stop;
 }
 
-public Action:Timer_UpdateHUD( Handle:hTimer, any:iUnused )
+public Action:Timer_Repeat(Handle:timer)
 {
+    //NOTE: game is automatically changing game description; use same method as
+    //fistful of zombies to set it back.
+    if (g_AutoSetGameDescription)
+    {
+         SetGameDescription(GAME_DESCRIPTION);
+         g_AutoSetGameDescription = false;
+    }
+
+    //update hud
+    //TODO move this to .inc
     new iTopLevel = 0, iClients[MaxClients+1], nClients = 0;
     if( iWinner <= 0 )
     {
@@ -1166,21 +1178,13 @@ stock LeaderCheck( bool:bShowMessage = true )
     return nLeaders;
 }
 
-stock bool:SetGameDescription( String:szNewValue[], bool:bOverride = true )
+stock bool:SetGameDescription(String:description[])
 {
 #if defined _SteamWorks_Included
-    if( bOverride )
-        return SteamWorks_SetGameDescription( szNewValue );
-
-    new String:szOldValue[64];
-    GetGameDescription( szOldValue, sizeof( szOldValue ), false );
-    if( StrEqual( szOldValue, szNewValue ) )
-    {
-        GetGameDescription( szOldValue, sizeof( szOldValue ), true );
-        return SteamWorks_SetGameDescription( szOldValue );
-    }
-#endif
+    return SteamWorks_SetGameDescription(description);
+#else
     return false;
+#endif
 }
 
 stock WriteLog( const String:szFormat[], any:... )
@@ -1194,18 +1198,6 @@ stock WriteLog( const String:szFormat[], any:... )
         //PrintToServer("[%.3f] %s", GetGameTime(), szBuffer );
     }
 #endif
-}
-
-stock PrintToConsoleAll( const String:szFormat[], any:... )
-    if( szFormat[0] != '\0' )
-{
-    decl String:szBuffer[1024];
-    VFormat( szBuffer, sizeof( szBuffer ), szFormat, 2 );
-
-    PrintToServer( szBuffer );
-    for( new i = 1; i <= MaxClients; i++ )
-        if( IsClientInGame( i ) )
-            PrintToConsole( i, szBuffer );
 }
 
 stock Int32Max( iValue1, iValue2 )
@@ -1235,3 +1227,22 @@ public Action:Command_DumpScores(caller, args)
     PrintToConsole(caller, "---------------------------------");
     return Plugin_Handled;
 }
+
+
+// TODO temp stop gap until sm-1.10
+/*
+stock PrintToConsoleAll( const String:szFormat[], any:... )
+{
+    if( szFormat[0] != '\0' )
+    {
+        decl String:szBuffer[1024];
+        VFormat( szBuffer, sizeof( szBuffer ), szFormat, 2 );
+
+        PrintToServer( szBuffer );
+        for( new i = 1; i <= MaxClients; i++ )
+            if( IsClientInGame( i ) )
+                PrintToConsole( i, szBuffer );
+    }
+
+}
+*/

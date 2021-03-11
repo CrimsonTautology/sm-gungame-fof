@@ -1,0 +1,27 @@
+name: Build plugins
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 4 * * 5"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        sm-version: ['1.10', '1.11']
+
+    name: build plugins
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up SourceMod compiler
+        uses: rumblefrog/setup-sp@master
+        with:
+          version: ${{ matrix.sm-version }}
+
+      - name: Compile SourceMod plugins
+        run: make clean compile test SPCOMP=spcomp SPFLAGS=-E
