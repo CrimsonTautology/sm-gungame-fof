@@ -1,12 +1,12 @@
-# sm-plugin-name
+# sm-gungame-fof
 
-![Build Status](https://github.com/CrimsonTautology/sm-plugin-name/workflows/Build%20plugins/badge.svg?style=flat-square)
-[![GitHub stars](https://img.shields.io/github/stars/CrimsonTautology/sm-plugin-name?style=flat-square)](https://github.com/CrimsonTautology/sm-plugin-name/stargazers)
-[![GitHub issues](https://img.shields.io/github/issues/CrimsonTautology/sm-plugin-name.svg?style=flat-square&logo=github&logoColor=white)](https://github.com/CrimsonTautology/sm-plugin-name/issues)
-[![GitHub pull requests](https://img.shields.io/github/issues-pr/CrimsonTautology/sm-plugin-name.svg?style=flat-square&logo=github&logoColor=white)](https://github.com/CrimsonTautology/sm-plugin-name/pulls)
-[![GitHub All Releases](https://img.shields.io/github/downloads/CrimsonTautology/sm-plugin-name/total.svg?style=flat-square&logo=github&logoColor=white)](https://github.com/CrimsonTautology/sm-plugin-name/releases)
+![Build Status](https://github.com/CrimsonTautology/sm-gungame-fof/workflows/Build%20plugins/badge.svg?style=flat-square)
+[![GitHub stars](https://img.shields.io/github/stars/CrimsonTautology/sm-gungame-fof?style=flat-square)](https://github.com/CrimsonTautology/sm-gungame-fof/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/CrimsonTautology/sm-gungame-fof.svg?style=flat-square&logo=github&logoColor=white)](https://github.com/CrimsonTautology/sm-gungame-fof/issues)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/CrimsonTautology/sm-gungame-fof.svg?style=flat-square&logo=github&logoColor=white)](https://github.com/CrimsonTautology/sm-gungame-fof/pulls)
+[![GitHub All Releases](https://img.shields.io/github/downloads/CrimsonTautology/sm-gungame-fof/total.svg?style=flat-square&logo=github&logoColor=white)](https://github.com/CrimsonTautology/sm-gungame-fof/releases)
 
-sm-plugin-name description
+sm-gungame-fof description
 
 
 ## Requirements
@@ -16,7 +16,7 @@ sm-plugin-name description
 ## Installation
 Make sure your server has SourceMod installed.  See [Installing SourceMod](https://wiki.alliedmods.net/Installing_SourceMod).  If you are new to managing SourceMod on a server be sure to read the '[Installing Plugins](https://wiki.alliedmods.net/Managing_your_sourcemod_installation#Installing_Plugins)' section from the official SourceMod Wiki.
 
-Download the latest [release](https://github.com/CrimsonTautology/sm-plugin-name/releases/latest) and copy the contents of `addons` to your server's `addons` directory.  It is recommended to restart your server after installing.
+Download the latest [release](https://github.com/CrimsonTautology/sm-gungame-fof/releases/latest) and copy the contents of `addons` to your server's `addons` directory.  It is recommended to restart your server after installing.
 
 To confirm the plugin is installed correctly, on your server's console type:
 ```
@@ -50,7 +50,7 @@ You will need the `spcomp` compiler from the latest stable release of SourceMod.
 Once you have SourceMod downloaded you can then compile using the included [Makefile](Makefile).
 
 ```sh
-cd sm-plugin-name
+cd sm-gungame-fof
 make SPCOMP=/path/to/addons/sourcemod/scripting/spcomp
 ```
 
