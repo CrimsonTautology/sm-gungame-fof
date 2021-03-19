@@ -163,10 +163,13 @@ public OnMapStart()
 {
     new Handle:mp_teamplay = FindConVar("mp_teamplay");
     new Handle:fof_sv_currentmode = FindConVar("fof_sv_currentmode");
-    if(mp_teamplay != INVALID_HANDLE && fof_sv_currentmode != INVALID_HANDLE){
+    if(mp_teamplay != INVALID_HANDLE && fof_sv_currentmode != INVALID_HANDLE)
+    {
         //TODO ?
         // no-op
-    } else {
+    }
+    else
+    {
         SetFailState("Missing mp_teamplay or/and fof_sv_currentmode console variable");
     }
 
