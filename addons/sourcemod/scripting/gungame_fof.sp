@@ -1,3 +1,13 @@
+/**
+ * vim: set ts=4 :
+ * =============================================================================
+ * Gun Game for Fistful of Frags
+ *
+ * Copyright 2021 CrimsonTautology
+ * =============================================================================
+ *
+ */
+
 #pragma semicolon 1
 
 #include <sourcemod>
@@ -6,22 +16,23 @@
 #undef REQUIRE_EXTENSIONS
 #tryinclude <steamworks>
 
-#define PLUGIN_VERSION		"1.3.4custom"
-#define CHAT_PREFIX			"\x04 GG \x07FFDA00 "
-#define CONSOLE_PREFIX		"[GunGame] "
-//#define DEBUG				true
+#define PLUGIN_VERSION "1.10.0"
+#define PLUGIN_NAME "[FoF] Gun Game"
+#define CHAT_PREFIX "\x04 GG \x07FFDA00 "
+#define CONSOLE_PREFIX "[GunGame] "
 
 #if !defined IN_FOF_SWITCH
-	#define IN_FOF_SWITCH	(1<<14)
+    #define IN_FOF_SWITCH   (1<<14)
 #endif
 
-#define SOUND_LEVELUP       "music/bounty/bounty_objective_stinger1.mp3"
-#define SOUND_FINAL         "music/bounty/bounty_objective_stinger2.mp3"
-#define SOUND_ROUNDWON      "music/round_end_stinger.mp3"
-#define SOUND_HUMILIATION   "animals/chicken_pain1.wav"
-#define SOUND_LOSTLEAD      "music/most_wanted_stinger.wav"
-#define SOUND_TAKENLEAD     "halloween/ragged_powerup.wav"
-#define SOUND_TIEDLEAD      "music/kill3.wav"
+#define GAME_DESCRIPTION "Gun Game"
+#define SOUND_LEVELUP "music/bounty/bounty_objective_stinger1.mp3"
+#define SOUND_FINAL "music/bounty/bounty_objective_stinger2.mp3"
+#define SOUND_ROUNDWON "music/round_end_stinger.mp3"
+#define SOUND_HUMILIATION "animals/chicken_pain1.wav"
+#define SOUND_LOSTLEAD "music/most_wanted_stinger.wav"
+#define SOUND_TAKENLEAD "halloween/ragged_powerup.wav"
+#define SOUND_TIEDLEAD "music/kill3.wav"
 
 new String:g_RoundStartSounds[][] =
 {
@@ -36,8 +47,6 @@ new String:g_RoundStartSounds[][] =
 #define HUD2_X 0.18
 #define HUD2_Y 0.10
 
-new Handle:sm_fof_gg_version = INVALID_HANDLE;
-new Handle:fof_gungame_enabled = INVALID_HANDLE;
 new Handle:fof_gungame_config = INVALID_HANDLE;
 new Handle:fof_gungame_fists = INVALID_HANDLE;
 new Handle:fof_gungame_equip_delay = INVALID_HANDLE;
@@ -57,7 +66,6 @@ new String:szLogFile[PLATFORM_MAX_PATH];
 new Float:flBonusRoundTime = 5.0;
 
 new bool:bLateLoaded = false;
-new bool:bDeathmatch = false;
 new Handle:hHUDSync1 = INVALID_HANDLE;
 new Handle:hHUDSync2 = INVALID_HANDLE;
 new Handle:hWeapons = INVALID_HANDLE;
@@ -83,28 +91,29 @@ new bool:bWasInTheLead[MAXPLAYERS+1];
 new Handle:g_Timer_GiveWeapon1[MAXPLAYERS+1] = {INVALID_HANDLE, ...};
 new Handle:g_Timer_GiveWeapon2[MAXPLAYERS+1] = {INVALID_HANDLE, ...};
 
+new bool:g_AutoSetGameDescription = false;
+
 public Plugin:myinfo =
 {
-	name = "[FoF] Gun Game",
-	author = "Leonardo",
-	description = "N/A",
-	version = PLUGIN_VERSION,
-	url = "http://www.xpenia.org/"
+    name = "[FoF] Gun Game",
+    author = "CrimsonTautology, Leonardo",
+    description = "Gun Game for Fistful of Frags",
+    version = PLUGIN_VERSION,
+    url = "https://github.com/CrimsonTautology/sm-gungame-fof"
 };
 
 public APLRes:AskPluginLoad2( Handle:hPlugin, bool:bLateLoad, String:szError[], iErrorLength )
 {
-	bLateLoaded = bLateLoad;
-	return APLRes_Success;
+    bLateLoaded = bLateLoad;
+    return APLRes_Success;
 }
 
 public OnPluginStart()
 {
-    sm_fof_gg_version = CreateConVar( "sm_fof_gg_version", PLUGIN_VERSION, "FoF Gun Game Plugin Version", FCVAR_NOTIFY|FCVAR_REPLICATED|FCVAR_SPONLY|FCVAR_DONTRECORD );
-    SetConVarString( sm_fof_gg_version, PLUGIN_VERSION );
-    HookConVarChange( sm_fof_gg_version, OnVerConVarChanged );
+    CreateConVar("fof_gungame_version", PLUGIN_VERSION, PLUGIN_NAME,
+            FCVAR_SPONLY | FCVAR_REPLICATED | FCVAR_NOTIFY | FCVAR_DONTRECORD);
 
-    fof_gungame_enabled = CreateConVar( "fof_gungame_enabled", "0", _, FCVAR_NOTIFY, true, 0.0, true, 1.0 );
+    CreateConVar( "fof_gungame_enabled", "0", _, FCVAR_NOTIFY, true, 0.0, true, 1.0 );
     HookConVarChange( fof_gungame_config = CreateConVar( "fof_gungame_config", "gungame_weapons.txt", _, 0 ), OnCfgConVarChanged );
     HookConVarChange( fof_gungame_fists = CreateConVar( "fof_gungame_fists", "1", "Allow or disallow fists.", FCVAR_NOTIFY, true, 0.0, true, 1.0 ), OnConVarChanged );
     HookConVarChange( fof_gungame_equip_delay = CreateConVar( "fof_gungame_equip_delay", "0.0", "Seconds before giving new equipment.", FCVAR_NOTIFY, true, 0.0 ), OnConVarChanged );
@@ -149,8 +158,7 @@ public OnPluginStart()
 
 public OnPluginEnd()
 {
-	AllowMapEnd( true );
-	//SetGameDescription( "Gun Game", false );
+    AllowMapEnd( true );
 }
 
 public OnClientDisconnect_Post( iClient )
@@ -168,10 +176,11 @@ public OnMapStart()
 {
     new Handle:mp_teamplay = FindConVar( "mp_teamplay" );
     new Handle:fof_sv_currentmode = FindConVar( "fof_sv_currentmode" );
-    if( mp_teamplay != INVALID_HANDLE && fof_sv_currentmode != INVALID_HANDLE )
-        bDeathmatch = ( GetConVarInt( mp_teamplay ) == 0 && GetConVarInt( fof_sv_currentmode ) == 1 );
-    else
+    if( mp_teamplay != INVALID_HANDLE && fof_sv_currentmode != INVALID_HANDLE ){
+        //bDeathmatch = ( GetConVarInt( mp_teamplay ) == 0 && GetConVarInt( fof_sv_currentmode ) == 1 );
+    } else {
         SetFailState( "Missing mp_teamplay or/and fof_sv_currentmode console variable" );
+    }
 
     iWinner = 0;
     szWinner[0] = '\0';
@@ -200,7 +209,8 @@ public OnMapStart()
         PrecacheSound(g_RoundStartSounds[i]);
     }
 
-    CreateTimer( 1.0, Timer_UpdateHUD, .flags = TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE );
+    g_AutoSetGameDescription = true;
+    CreateTimer(1.0, Timer_Repeat, .flags = TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 
     SDKHook(GetPlayerResourceEntity(), SDKHook_ThinkPost, Hook_OnPlayerResourceThinkPost);
 }
@@ -210,110 +220,110 @@ RemoveCrates()
     new ent = INVALID_ENT_REFERENCE;
     while( (ent = FindEntityByClassname(ent, "fof_crate*")) != INVALID_ENT_REFERENCE)
     {
-		AcceptEntityInput(ent, "Kill" );
+        AcceptEntityInput(ent, "Kill" );
     }
 }
 
 public OnConfigsExecuted()
 {
-	SetGameDescription( "Gun Game", true );
-	
-	AllowMapEnd( false );
-	
-	ScanConVars();
-	ReloadConfigFile();
+    SetGameDescription(GAME_DESCRIPTION);
+    
+    AllowMapEnd( false );
+    
+    ScanConVars();
+    ReloadConfigFile();
 }
 
 stock ScanConVars()
 {
-	bAllowFists = GetConVarBool( fof_gungame_fists );
-	flEquipDelay = FloatMax( 0.0, GetConVarFloat( fof_gungame_equip_delay ) );
-	nHealAmount = Int32Max( 0, GetConVarInt( fof_gungame_heal ) );
-	flDrunkness = GetConVarFloat( fof_gungame_drunkness );
-	bSuicides = GetConVarBool( fof_gungame_suicides );
-	GetConVarString( fof_gungame_logfile, szLogFile, sizeof( szLogFile ) );
-	flBonusRoundTime = FloatMax( 0.0, GetConVarFloat( mp_bonusroundtime ) );
+    bAllowFists = GetConVarBool( fof_gungame_fists );
+    flEquipDelay = FloatMax( 0.0, GetConVarFloat( fof_gungame_equip_delay ) );
+    nHealAmount = Int32Max( 0, GetConVarInt( fof_gungame_heal ) );
+    flDrunkness = GetConVarFloat( fof_gungame_drunkness );
+    bSuicides = GetConVarBool( fof_gungame_suicides );
+    GetConVarString( fof_gungame_logfile, szLogFile, sizeof( szLogFile ) );
+    flBonusRoundTime = FloatMax( 0.0, GetConVarFloat( mp_bonusroundtime ) );
 }
 
 stock ReloadConfigFile()
 {
-	iMaxLevel = 1;
-	
-	new String:szConfigPath[PLATFORM_MAX_PATH], String:szNextLevel[16];
-	GetConVarString( fof_gungame_config, szConfigPath, sizeof( szConfigPath ) );
-	BuildPath( Path_SM, szConfigPath, sizeof( szConfigPath ), "configs/%s", szConfigPath );
-	IntToString( iMaxLevel, szNextLevel, sizeof( szNextLevel ) );
-	
-	if( hWeapons != INVALID_HANDLE )
-		CloseHandle( hWeapons );
-	hWeapons = CreateKeyValues( "gungame_weapons" );
-	if( FileToKeyValues( hWeapons, szConfigPath ) )
-	{
-		new String:szLevel[16], iLevel, String:szPlayerWeapon[2][32];
-		if( KvGotoFirstSubKey( hWeapons ) )
-			do
-			{
-				KvGetSectionName( hWeapons, szLevel, sizeof( szLevel ) );
-				
-				if( !IsCharNumeric( szLevel[0] ) )
-					continue;
-				
-				iLevel = StringToInt( szLevel );
-				if( iMaxLevel < iLevel )
-					iMaxLevel = iLevel;
-				
-				if( KvGotoFirstSubKey( hWeapons, false ) )
-				{
-					KvGetSectionName( hWeapons, szPlayerWeapon[0], sizeof( szPlayerWeapon[] ) );
-					KvGoBack( hWeapons );
-					KvGetString( hWeapons, szPlayerWeapon[0], szPlayerWeapon[1], sizeof( szPlayerWeapon[] ) );
-				}
-				PrintToServer( "%sLevel %d = %s%s%s", CONSOLE_PREFIX, iMaxLevel, szPlayerWeapon[0], szPlayerWeapon[1][0] != '\0' ? ", " : "", szPlayerWeapon[1] );
-			}
-			while( KvGotoNextKey( hWeapons ) );
-		PrintToServer( "%sTop level - %d", CONSOLE_PREFIX, iMaxLevel );
-	}
-	else
-		PrintToServer( "%sFalied to parse the config file.", CONSOLE_PREFIX );
+    iMaxLevel = 1;
+    
+    new String:szConfigPath[PLATFORM_MAX_PATH], String:szNextLevel[16];
+    GetConVarString( fof_gungame_config, szConfigPath, sizeof( szConfigPath ) );
+    BuildPath( Path_SM, szConfigPath, sizeof( szConfigPath ), "configs/%s", szConfigPath );
+    IntToString( iMaxLevel, szNextLevel, sizeof( szNextLevel ) );
+    
+    if( hWeapons != INVALID_HANDLE )
+        CloseHandle( hWeapons );
+    hWeapons = CreateKeyValues( "gungame_weapons" );
+    if( FileToKeyValues( hWeapons, szConfigPath ) )
+    {
+        new String:szLevel[16], iLevel, String:szPlayerWeapon[2][32];
+        if( KvGotoFirstSubKey( hWeapons ) )
+            do
+            {
+                KvGetSectionName( hWeapons, szLevel, sizeof( szLevel ) );
+                
+                if( !IsCharNumeric( szLevel[0] ) )
+                    continue;
+                
+                iLevel = StringToInt( szLevel );
+                if( iMaxLevel < iLevel )
+                    iMaxLevel = iLevel;
+                
+                if( KvGotoFirstSubKey( hWeapons, false ) )
+                {
+                    KvGetSectionName( hWeapons, szPlayerWeapon[0], sizeof( szPlayerWeapon[] ) );
+                    KvGoBack( hWeapons );
+                    KvGetString( hWeapons, szPlayerWeapon[0], szPlayerWeapon[1], sizeof( szPlayerWeapon[] ) );
+                }
+                PrintToServer( "%sLevel %d = %s%s%s", CONSOLE_PREFIX, iMaxLevel, szPlayerWeapon[0], szPlayerWeapon[1][0] != '\0' ? ", " : "", szPlayerWeapon[1] );
+            }
+            while( KvGotoNextKey( hWeapons ) );
+        PrintToServer( "%sTop level - %d", CONSOLE_PREFIX, iMaxLevel );
+    }
+    else
+        PrintToServer( "%sFalied to parse the config file.", CONSOLE_PREFIX );
 }
 
 public OnConVarChanged( Handle:hConVar, const String:szOldValue[], const String:szNewValue[] )
-	ScanConVars();
+    ScanConVars();
 
 public OnCfgConVarChanged( Handle:hConVar, const String:szOldValue[], const String:szNewValue[] )
-	ReloadConfigFile();
+    ReloadConfigFile();
 
 public OnVerConVarChanged( Handle:hConVar, const String:szOldValue[], const String:szNewValue[] )
-	if( strcmp( szNewValue, PLUGIN_VERSION, false ) )
-		SetConVarString( hConVar, PLUGIN_VERSION, true, true );
+    if( strcmp( szNewValue, PLUGIN_VERSION, false ) )
+        SetConVarString( hConVar, PLUGIN_VERSION, true, true );
 
 public Action:Command_RestartRound( iClient, nArgs )
 {
-	RestartTheGame();
-	return Plugin_Handled;
+    RestartTheGame();
+    return Plugin_Handled;
 }
 
 public Action:Command_ReloadConfigFile( iClient, nArgs )
 {
-	ReloadConfigFile();
-	return Plugin_Handled;
+    ReloadConfigFile();
+    return Plugin_Handled;
 }
 
 public Action:Command_item_dm_end( iClient, const String:szCommand[], nArgs )
 {
-	if( bFirstEquip[iClient] )
-	{
-		bFirstEquip[iClient] = false;
-		CreateTimer( 0.0, Timer_UpdateEquipment, GetClientUserId( iClient ), TIMER_FLAG_NO_MAPCHANGE );
-	}
-	return Plugin_Continue;
+    if( bFirstEquip[iClient] )
+    {
+        bFirstEquip[iClient] = false;
+        CreateTimer( 0.0, Timer_UpdateEquipment, GetClientUserId( iClient ), TIMER_FLAG_NO_MAPCHANGE );
+    }
+    return Plugin_Continue;
 }
 
 public Event_PlayerActivate( Handle:hEvent, const String:szEventName[], bool:bDontBroadcast )
 {
-	new iClient = GetClientOfUserId( GetEventInt( hEvent, "userid" ) );
-	if( 0 < iClient <= MaxClients )
-	{
+    new iClient = GetClientOfUserId( GetEventInt( hEvent, "userid" ) );
+    if( 0 < iClient <= MaxClients )
+    {
         iPlayerLevel[ iClient ] = 1;
         flLastKill[ iClient ] = 0.0;
         flLastLevelUP[ iClient ] = 0.0;
@@ -326,28 +336,28 @@ public Event_PlayerActivate( Handle:hEvent, const String:szEventName[], bool:bDo
             SDKHook( iClient, SDKHook_OnTakeDamage, Hook_OnTakeDamage );
             SDKHook( iClient, SDKHook_WeaponSwitchPost, Hook_WeaponSwitchPost );
         }
-	}
+    }
 }
 
 public Event_PlayerSpawn( Handle:hEvent, const String:szEventName[], bool:bDontBroadcast )
 {
-	new iUserID = GetEventInt( hEvent, "userid" );
-	new iClient = GetClientOfUserId( iUserID );
-	
-	if( 0 < iClient <= MaxClients && bFirstSpawn[iClient] )
-	{
-		bFirstSpawn[iClient] = false;
-		flStart[iClient] = GetGameTime();
-		CreateTimer( 2.0, Timer_Announce, iUserID, TIMER_FLAG_NO_MAPCHANGE );
-	}
-	
-	CreateTimer( 0.1, Timer_UpdateEquipment, iUserID, TIMER_FLAG_NO_MAPCHANGE );
+    new iUserID = GetEventInt( hEvent, "userid" );
+    new iClient = GetClientOfUserId( iUserID );
+    
+    if( 0 < iClient <= MaxClients && bFirstSpawn[iClient] )
+    {
+        bFirstSpawn[iClient] = false;
+        flStart[iClient] = GetGameTime();
+        CreateTimer( 2.0, Timer_Announce, iUserID, TIMER_FLAG_NO_MAPCHANGE );
+    }
+    
+    CreateTimer( 0.1, Timer_UpdateEquipment, iUserID, TIMER_FLAG_NO_MAPCHANGE );
 }
 
 public Event_PlayerShoot( Handle:hEvent, const String:szEventName[], bool:bDontBroadcast )
 {
     new iClient = GetClientOfUserId(GetEventInt(hEvent, "userid"));
-    if(0 <= iClient < MaxClients)
+    if(0 < iClient <= MaxClients)
     {
         GetEventString(hEvent, "weapon", szLastWeaponFired[iClient], sizeof(szLastWeaponFired[]));
     }
@@ -880,8 +890,18 @@ public Action:Timer_UseWeapon( Handle:hTimer, Handle:hPack )
     return Plugin_Stop;
 }
 
-public Action:Timer_UpdateHUD( Handle:hTimer, any:iUnused )
+public Action:Timer_Repeat(Handle:timer)
 {
+    //NOTE: game is automatically changing game description; use same method as
+    //fistful of zombies to set it back.
+    if (g_AutoSetGameDescription)
+    {
+         SetGameDescription(GAME_DESCRIPTION);
+         g_AutoSetGameDescription = false;
+    }
+
+    //update hud
+    //TODO move this to .inc
     new iTopLevel = 0, iClients[MaxClients+1], nClients = 0;
     if( iWinner <= 0 )
     {
@@ -1003,7 +1023,7 @@ if( 0 < iClient <= MaxClients && IsClientInGame( iClient ) )
                 {
                     GetEntityClassname( iWeapon, szClassname, sizeof( szClassname ) );
                     //if( szClassname[strlen(szClassname)-1] == '2' )
-                    //	szClassname[strlen(szClassname)-1] = '\0';
+                    //  szClassname[strlen(szClassname)-1] = '\0';
                     if( StrEqual( szClassname, szItem ) )
                     {
                         //EquipPlayerWeapon( iClient, iWeapon );
@@ -1166,21 +1186,13 @@ stock LeaderCheck( bool:bShowMessage = true )
     return nLeaders;
 }
 
-stock bool:SetGameDescription( String:szNewValue[], bool:bOverride = true )
+stock bool:SetGameDescription(String:description[])
 {
 #if defined _SteamWorks_Included
-    if( bOverride )
-        return SteamWorks_SetGameDescription( szNewValue );
-
-    new String:szOldValue[64];
-    GetGameDescription( szOldValue, sizeof( szOldValue ), false );
-    if( StrEqual( szOldValue, szNewValue ) )
-    {
-        GetGameDescription( szOldValue, sizeof( szOldValue ), true );
-        return SteamWorks_SetGameDescription( szOldValue );
-    }
-#endif
+    return SteamWorks_SetGameDescription(description);
+#else
     return false;
+#endif
 }
 
 stock WriteLog( const String:szFormat[], any:... )
@@ -1194,18 +1206,6 @@ stock WriteLog( const String:szFormat[], any:... )
         //PrintToServer("[%.3f] %s", GetGameTime(), szBuffer );
     }
 #endif
-}
-
-stock PrintToConsoleAll( const String:szFormat[], any:... )
-    if( szFormat[0] != '\0' )
-{
-    decl String:szBuffer[1024];
-    VFormat( szBuffer, sizeof( szBuffer ), szFormat, 2 );
-
-    PrintToServer( szBuffer );
-    for( new i = 1; i <= MaxClients; i++ )
-        if( IsClientInGame( i ) )
-            PrintToConsole( i, szBuffer );
 }
 
 stock Int32Max( iValue1, iValue2 )

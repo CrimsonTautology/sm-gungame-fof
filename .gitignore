@@ -1,11 +1,15 @@
-#compiled files
+# compiled files
 *.smx
-*.exe
-*.o
-#fof_gungame_orig.sp
+*.asm
+*.lst
+*.so
 
-#vim files
+# vim files
 *.sw*
 
-#Ignore the settings file
-Sourcemodproject.yml
+# tags
+tags
+
+# release
+*release.tar.gz
+*release.zip
