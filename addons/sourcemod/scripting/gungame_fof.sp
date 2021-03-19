@@ -65,7 +65,6 @@ new bool:bSuicides = false;
 new String:szLogFile[PLATFORM_MAX_PATH];
 new Float:flBonusRoundTime = 5.0;
 
-new bool:bLateLoaded = false;
 new Handle:hHUDSync1 = INVALID_HANDLE;
 new Handle:hHUDSync2 = INVALID_HANDLE;
 new Handle:hWeapons = INVALID_HANDLE;
@@ -102,12 +101,6 @@ public Plugin:myinfo =
     url = "https://github.com/CrimsonTautology/sm-gungame-fof"
 };
 
-public APLRes:AskPluginLoad2( Handle:hPlugin, bool:bLateLoad, String:szError[], iErrorLength )
-{
-    bLateLoaded = bLateLoad;
-    return APLRes_Success;
-}
-
 public OnPluginStart()
 {
     CreateConVar("fof_gungame_version", PLUGIN_VERSION, PLUGIN_NAME,
@@ -143,17 +136,15 @@ public OnPluginStart()
 
     hWeapons = CreateKeyValues( "gungame_weapons" );
 
-    if( bLateLoaded )
+    for( new i = 1; i <= MaxClients; i++ )
     {
-        for( new i = 1; i <= MaxClients; i++ )
-            if( IsClientInGame( i ) )
-            {
-                SDKHook( i, SDKHook_OnTakeDamage, Hook_OnTakeDamage );
-                SDKHook( i, SDKHook_WeaponSwitchPost, Hook_WeaponSwitchPost );
-            }
-
-        RestartTheGame();
+        if( IsClientInGame( i ) )
+        {
+            SDKHook( i, SDKHook_OnTakeDamage, Hook_OnTakeDamage );
+            SDKHook( i, SDKHook_WeaponSwitchPost, Hook_WeaponSwitchPost );
+        }
     }
+
 }
 
 public OnPluginEnd()
