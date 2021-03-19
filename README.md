@@ -31,9 +31,9 @@ NOTE: All commands can be run from the in-game chat by replacing `sm_` with `!` 
 
 | Command | Accepts | Values | SM Admin Flag | Description |
 | --- | --- | --- | --- | --- |
-| `fof_gungame_restart` | None | None | Generic | Force restart the round |
-| `fof_gungame_reload_cfg` | None | None | Config | Force a reload of the configuration file |
-| `fof_gungame_scores` | None | None | Root | (debug) List player score values to console |
+| `fof_gungame_restart` | None | None | Generic | Force a restart of the current round |
+| `fof_gungame_reload` | None | None | Config | Force a reload of the configuration file |
+| `fof_gungame_dump` | None | None | Root | (debug) Output information about the current game to console |
 
 
 ### Console Variables
@@ -44,9 +44,8 @@ NOTE: All commands can be run from the in-game chat by replacing `sm_` with `!` 
 | `fof_gungame_config` | string | file path | Location of the Gun Game configuration file |
 | `fof_gungame_fists` | boolean | 0-1 | Whether or not to allow fists in game.  Killing someone with fists will reduce their level |
 | `fof_gungame_heal` | float | 0-100 | Amount of health player recieves when ranking up |
-| `fof_gungame_equip_delay` | float | 0-999 | (deprecated) Seconds before giving new equipment on spawn |
-| `fof_gungame_drunkness` | float | 0-999 | (deprecated) Amount of "drunkness" player recieves when ranking up |
-| `fof_gungame_logfile` | string | file path | (deprecated) Location of the Gun Game log file |
+| `fof_gungame_drunkness` | boolean | 0-1 | Whether or not to add a drunkness effect when a player ranks up |
+| `fof_gungame_suicides` | boolean | 0-1 | Whether or not to allow suicides.  If disabled, a player who commits suicide will be ranked down |
 
 
 ## Compiling

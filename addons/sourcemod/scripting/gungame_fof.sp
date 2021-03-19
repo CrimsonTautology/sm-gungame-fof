@@ -16,7 +16,7 @@
 #undef REQUIRE_EXTENSIONS
 #tryinclude <steamworks>
 
-#define PLUGIN_VERSION "1.10.1pre"
+#define PLUGIN_VERSION "1.10.1pre2"
 #define PLUGIN_NAME "[FoF] Gun Game"
 #define CHAT_PREFIX "\x04 GG \x07FFDA00 "
 #define CONSOLE_PREFIX "[GunGame] "
@@ -43,23 +43,17 @@ new String:g_RoundStartSounds[][] =
 #define HUD2_X 0.18
 #define HUD2_Y 0.10
 
-new Handle:fof_gungame_config = INVALID_HANDLE;
-new Handle:fof_gungame_fists = INVALID_HANDLE;
-new Handle:fof_gungame_equip_delay = INVALID_HANDLE;
-new Handle:fof_gungame_heal = INVALID_HANDLE;
-new Handle:fof_gungame_drunkness = INVALID_HANDLE;
-new Handle:fof_gungame_suicides = INVALID_HANDLE;
-new Handle:fof_gungame_logfile = INVALID_HANDLE;
-new Handle:fof_sv_dm_timer_ends_map = INVALID_HANDLE;
-new Handle:mp_bonusroundtime = INVALID_HANDLE;
+ConVar g_EnabledCvar;
+ConVar g_ConfigFileCvar;
+ConVar g_FistsEnabledCvar;
+ConVar g_HealAmoundCvar;
+ConVar g_DrunknessEnabledCvar;
+ConVar g_SuicidesEnabledCvar;
 
-new bool:g_AllowFists = false;
-new Float:g_EquipDelay = 0.0;
-new g_HealAmount = 25;
-new Float:g_DrunknessAmount = 2.5;
-new bool:g_AllowSuicides = false;
-new String:g_LogFilePath[PLATFORM_MAX_PATH];
-new Float:g_BonusRoundTime = 5.0;
+ConVar g_TimerEndsMapCvar;
+ConVar g_BonusroundtimeCvar;
+
+#define DRUNKNESS_AMOUNT 2.5
 
 new Handle:g_HUDSync1 = INVALID_HANDLE;
 new Handle:g_HUDSync2 = INVALID_HANDLE;
@@ -88,7 +82,7 @@ new Handle:g_Timer_GiveWeapon2[MAXPLAYERS+1] = {INVALID_HANDLE, ...};
 
 new bool:g_AutoSetGameDescription = false;
 
-public Plugin:myinfo =
+public Plugin myinfo =
 {
     name = "[FoF] Gun Game",
     author = "CrimsonTautology, Leonardo",
@@ -102,16 +96,39 @@ public OnPluginStart()
     CreateConVar("fof_gungame_version", PLUGIN_VERSION, PLUGIN_NAME,
             FCVAR_SPONLY | FCVAR_REPLICATED | FCVAR_NOTIFY | FCVAR_DONTRECORD);
 
-    CreateConVar("fof_gungame_enabled", "0", _, FCVAR_NOTIFY, true, 0.0, true, 1.0);
-    HookConVarChange(fof_gungame_config = CreateConVar("fof_gungame_config", "gungame_weapons.txt", _, 0), OnCfgConVarChanged);
-    HookConVarChange(fof_gungame_fists = CreateConVar("fof_gungame_fists", "1", "Allow or disallow fists.", FCVAR_NOTIFY, true, 0.0, true, 1.0), OnConVarChanged);
-    HookConVarChange(fof_gungame_equip_delay = CreateConVar("fof_gungame_equip_delay", "0.0", "Seconds before giving new equipment.", FCVAR_NOTIFY, true, 0.0), OnConVarChanged);
-    HookConVarChange(fof_gungame_heal = CreateConVar("fof_gungame_heal", "25", "Amount of health to restore on each kill.", FCVAR_NOTIFY, true, 0.0), OnConVarChanged);
-    HookConVarChange(fof_gungame_drunkness = CreateConVar("fof_gungame_drunkness", "6.0", _, FCVAR_NOTIFY), OnConVarChanged);
-    HookConVarChange(fof_gungame_suicides = CreateConVar("fof_gungame_suicides", "1", "Set 0 to disallow suicides, level down for it.", FCVAR_NOTIFY), OnConVarChanged);
-    HookConVarChange(fof_gungame_logfile = CreateConVar("fof_gungame_logfile", "", _, 0), OnConVarChanged);
-    fof_sv_dm_timer_ends_map = FindConVar("fof_sv_dm_timer_ends_map");
-    HookConVarChange(mp_bonusroundtime = FindConVar("mp_bonusroundtime"), OnConVarChanged);
+    g_EnabledCvar = CreateConVar(
+            "fof_gungame_enabled", "1",
+            "Whether or not Gun Game is enabled",
+            FCVAR_NOTIFY, true, 0.0, true, 1.0);
+
+    g_ConfigFileCvar = CreateConVar(
+            "fof_gungame_config", "gungame_weapons.txt",
+            "Location of the Gun Game configuration file",
+            0);
+
+    g_FistsEnabledCvar = CreateConVar(
+            "fof_gungame_fists", "1",
+            "Allow or disallow fists",
+            FCVAR_NOTIFY, true, 0.0, true, 1.0);
+
+    g_HealAmoundCvar = CreateConVar(
+            "fof_gungame_heal", "25",
+            "Amount of health to restore on each rank up",
+            FCVAR_NOTIFY, true, 0.0);
+
+    g_DrunknessEnabledCvar = CreateConVar(
+            "fof_gungame_drunkness", "1",
+            "Allow or disallow drunkness on rank up",
+            FCVAR_NOTIFY, true, 0.0, true, 1.0);
+
+    g_SuicidesEnabledCvar = CreateConVar(
+            "fof_gungame_suicides", "1",
+            "Allow or disallow player suicides. If disabled, a player who commits suicide will be ranked down",
+            FCVAR_NOTIFY, true, 0.0, true, 1.0);
+
+    g_TimerEndsMapCvar = FindConVar("fof_sv_dm_timer_ends_map");
+    g_BonusroundtimeCvar = FindConVar("mp_bonusroundtime");
+
     AutoExecConfig();
 
     HookEvent("player_activate", Event_PlayerActivate);
@@ -120,9 +137,15 @@ public OnPluginStart()
     HookEvent("player_death", Event_PlayerDeath);
     HookEvent("round_start", Event_RoundStart);
 
-    RegAdminCmd("fof_gungame_restart", Command_RestartRound, ADMFLAG_GENERIC);
-    RegAdminCmd("fof_gungame_reload_cfg", Command_ReloadConfigFile, ADMFLAG_CONFIG);
-    RegAdminCmd("fof_gungame_scores", Command_DumpScores, ADMFLAG_ROOT, "[DEBUG] List player score values");
+    RegAdminCmd("fof_gungame_restart", Command_Restart, ADMFLAG_GENERIC,
+            "Force a restart of the current round");
+
+    RegAdminCmd("fof_gungame_reload", Command_Reload, ADMFLAG_CONFIG,
+            "Force a reload of the configuration file");
+
+    RegAdminCmd("fof_gungame_dump", Command_Dump, ADMFLAG_ROOT,
+            "Debug: Output information about the current game to console");
+
     AddCommandListener(Command_item_dm_end, "item_dm_end");
 
     g_HUDSync1 = CreateHudSynchronizer();
@@ -145,7 +168,7 @@ public OnPluginStart()
 
 public OnPluginEnd()
 {
-    AllowMapEnd(true);
+    SetMapCanEnd(true);
 }
 
 public OnClientDisconnect_Post(client)
@@ -163,18 +186,6 @@ public OnClientDisconnect_Post(client)
 
 public OnMapStart()
 {
-    new Handle:mp_teamplay = FindConVar("mp_teamplay");
-    new Handle:fof_sv_currentmode = FindConVar("fof_sv_currentmode");
-    if (mp_teamplay != INVALID_HANDLE && fof_sv_currentmode != INVALID_HANDLE)
-    {
-        //TODO ?
-        // no-op
-    }
-    else
-    {
-        SetFailState("Missing mp_teamplay or/and fof_sv_currentmode console variable");
-    }
-
     g_WinningClient = 0;
     g_WinningClientName[0] = '\0';
     g_LeadingClient = 0;
@@ -221,21 +232,9 @@ public OnConfigsExecuted()
 {
     SetGameDescription(GAME_DESCRIPTION);
 
-    AllowMapEnd(false);
+    SetMapCanEnd(false);
 
-    ScanConVars();
     ReloadConfigFile();
-}
-
-void ScanConVars()
-{
-    g_AllowFists = GetConVarBool(fof_gungame_fists);
-    g_EquipDelay = FloatMax(0.0, GetConVarFloat(fof_gungame_equip_delay));
-    g_HealAmount = Int32Max(0, GetConVarInt(fof_gungame_heal));
-    g_DrunknessAmount = GetConVarFloat(fof_gungame_drunkness);
-    g_AllowSuicides = GetConVarBool(fof_gungame_suicides);
-    GetConVarString(fof_gungame_logfile, g_LogFilePath, sizeof(g_LogFilePath));
-    g_BonusRoundTime = FloatMax(0.0, GetConVarFloat(mp_bonusroundtime));
 }
 
 void ReloadConfigFile()
@@ -243,7 +242,7 @@ void ReloadConfigFile()
     g_MaxLevel = 1;
 
     new String:file[PLATFORM_MAX_PATH], String:nextlevel[16];
-    GetConVarString(fof_gungame_config, file, sizeof(file));
+    GetConVarString(g_ConfigFileCvar, file, sizeof(file));
     BuildPath(Path_SM, file, sizeof(file), "configs/%s", file);
     IntToString(g_MaxLevel, nextlevel, sizeof(nextlevel));
 
@@ -281,23 +280,13 @@ void ReloadConfigFile()
         PrintToServer("%sFalied to parse the config file.", CONSOLE_PREFIX);
 }
 
-void OnConVarChanged(Handle:convar, const String:oldValue[], const String:newValue[])
-{
-    ScanConVars();
-}
-
-void OnCfgConVarChanged(Handle:convar, const String:oldValue[], const String:newValue[])
-{
-    ReloadConfigFile();
-}
-
-Action Command_RestartRound(client, args)
+Action Command_Restart(client, args)
 {
     RestartTheGame();
     return Plugin_Handled;
 }
 
-Action Command_ReloadConfigFile(client, args)
+Action Command_Reload(client, args)
 {
     ReloadConfigFile();
     return Plugin_Handled;
@@ -377,7 +366,7 @@ void Event_PlayerDeath(Handle:event, const String:eventname[], bool:dontBroadcas
 
     if (victim == killer || killer == 0 && GetEventInt(event, "assist") <= 0)
     {
-        if (!g_AllowSuicides && g_ClientLevel[killer] > 1)
+        if (!SuicidesEnabled() && g_ClientLevel[killer] > 1)
         {
             g_ClientLevel[victim]--;
             LeaderCheck();
@@ -490,7 +479,7 @@ void Event_PlayerDeath(Handle:event, const String:eventname[], bool:dontBroadcas
         return;
     }
 
-    g_LastLevelUP[killer] = timestamp + g_EquipDelay;
+    g_LastLevelUP[killer] = timestamp;
     g_ClientLevel[killer]++;
     if (g_ClientLevel[killer] > g_MaxLevel)
     {
@@ -540,7 +529,7 @@ void Event_PlayerDeath(Handle:event, const String:eventname[], bool:dontBroadcas
         }
 
         CreateTimer(3.0, Timer_RespawnAnnounce, .flags = TIMER_FLAG_NO_MAPCHANGE);
-        AllowMapEnd(true);
+        SetMapCanEnd(true);
     }
     else if (g_ClientLevel[killer] == g_MaxLevel)
     {
@@ -561,9 +550,9 @@ void Event_PlayerDeath(Handle:event, const String:eventname[], bool:dontBroadcas
 
     if (IsPlayerAlive(killer))
     {
-        if (g_HealAmount != 0)
+        if (HealAmount() > 0)
         {
-            SetEntityHealth(killer, GetClientHealth(killer) + g_HealAmount);
+            SetEntityHealth(killer, GetClientHealth(killer) + HealAmount());
         }
         CreateTimer(0.01, Timer_GetDrunk, killerUID, TIMER_FLAG_NO_MAPCHANGE);
     }
@@ -571,13 +560,19 @@ void Event_PlayerDeath(Handle:event, const String:eventname[], bool:dontBroadcas
     CreateTimer(0.0, Timer_UpdateEquipment, killerUID, TIMER_FLAG_NO_MAPCHANGE);
 }
 
-Action Timer_GetDrunk(Handle:timer, any:userid)
+Action Timer_GetDrunk(Handle timer, int userid)
 {
-    new client = GetClientOfUserId(userid);
-    if (g_DrunknessAmount != 0.0 && 0 < client <= MaxClients && IsClientInGame(client) && IsPlayerAlive(client))
-    {
-        SetEntPropFloat(client, Prop_Send, "m_flDrunkness", FloatMax(0.0, GetEntPropFloat(client, Prop_Send, "m_flDrunkness") + g_DrunknessAmount));
-    }
+    int client = GetClientOfUserId(userid);
+
+    if (!DrunknessEnabled()) return Plugin_Handled;
+    if (!(0 < client <= MaxClients)) return Plugin_Handled;
+    if (!IsClientInGame(client)) return Plugin_Handled;
+    if (!IsPlayerAlive(client)) return Plugin_Handled;
+
+    float delta = GetEntPropFloat(client, Prop_Send, "m_flDrunkness");
+    delta += DRUNKNESS_AMOUNT;
+    SetEntPropFloat(client, Prop_Send, "m_flDrunkness", delta);
+
     return Plugin_Stop;
 }
 
@@ -625,7 +620,7 @@ void Hook_WeaponSwitchPost(client, weapon)
         IntToString(g_ClientLevel[client], playerLevel, sizeof(playerLevel));
 
         new String:allowedWeapon[2][24], Handle:AllowedWeapons = CreateArray(8);
-        if (g_AllowFists)
+        if (FistsEnabled())
         {
             WriteLog("Hook_WeaponSwitchPost(%d): adding weapon_fists", client);
             PushArrayString(AllowedWeapons, "weapon_fists");
@@ -711,24 +706,26 @@ void Hook_OnPlayerResourceThinkPost(ent)
 
 Action Timer_RespawnAnnounce(Handle:timer, any:userid)
 {
-    CreateTimer(g_BonusRoundTime, Timer_RespawnPlayers, .flags = TIMER_FLAG_NO_MAPCHANGE);
-    CreateTimer(FloatMax(0.0, (g_BonusRoundTime - 1.0)), Timer_AllowMapEnd, .flags = TIMER_FLAG_NO_MAPCHANGE);
-    if (g_BonusRoundTime >= 1.0)
+    float bonusroundtime = g_BonusroundtimeCvar.FloatValue;
+
+    CreateTimer(bonusroundtime, Timer_RespawnPlayers, .flags = TIMER_FLAG_NO_MAPCHANGE);
+    CreateTimer(FloatMax(0.0, (bonusroundtime - 1.0)), Timer_AllowMapEnd, .flags = TIMER_FLAG_NO_MAPCHANGE);
+    if (bonusroundtime >= 1.0)
     {
-        PrintToChatAll("%sStarting new round in %d seconds...", CHAT_PREFIX, RoundToCeil(g_BonusRoundTime));
+        PrintToChatAll("%sStarting new round in %d seconds...", CHAT_PREFIX, RoundToCeil(bonusroundtime));
     }
     return Plugin_Stop;
 }
 
 Action Timer_AllowMapEnd(Handle:timer, any:userid)
 {
-    AllowMapEnd(true);
+    SetMapCanEnd(true);
     return Plugin_Stop;
 }
 
 Action Timer_RespawnPlayers(Handle:timer)
 {
-    AllowMapEnd(true);
+    SetMapCanEnd(true);
 
     g_WinningClient = 0;
     g_WinningClientName[0] = '\0';
@@ -781,7 +778,7 @@ Action Timer_RespawnPlayers(Handle:timer)
 
 Action Timer_RespawnPlayers_Fix(Handle:timer)
 {
-    AllowMapEnd(false);
+    SetMapCanEnd(false);
 
     for (new i = 1; i <= MaxClients; i++)
     {
@@ -871,13 +868,13 @@ Action Timer_UpdateEquipment(Handle:timer, any:userid)
 
         new Handle:pack1;
         //if (g_Timer_GiveWeapon1[client] != INVALID_HANDLE) CloseHandle(g_Timer_GiveWeapon1[client]);
-        g_Timer_GiveWeapon1[client] = CreateDataTimer(g_EquipDelay + 0.05, Timer_GiveWeapon, pack1, TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE);
+        g_Timer_GiveWeapon1[client] = CreateDataTimer(0.05, Timer_GiveWeapon, pack1, TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE);
         WritePackCell(pack1, userid);
         WritePackString(pack1, playerWeapon[0]);
 
         new Handle:pack2;
         //if (g_Timer_GiveWeapon2[client] != INVALID_HANDLE) CloseHandle(g_Timer_GiveWeapon2[client]);
-        g_Timer_GiveWeapon2[client] = CreateDataTimer(g_EquipDelay + 0.18, Timer_GiveWeapon, pack2, TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE);
+        g_Timer_GiveWeapon2[client] = CreateDataTimer(0.18, Timer_GiveWeapon, pack2, TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE);
         WritePackCell(pack2, userid);
         WritePackString(pack2, playerWeapon[1]);
 
@@ -1215,7 +1212,7 @@ void StripWeapons(client)
                 }
 
                 GetEntityClassname(weapon, class, sizeof(class));
-                if (g_AllowFists && StrEqual(class, "weapon_fists"))
+                if (FistsEnabled() && StrEqual(class, "weapon_fists"))
                 {
                     WriteLog("StripWeapons(%d): skipping '%s' (slot:%d,entity:%d)", client, class, s, weapon);
                     continue;
@@ -1241,12 +1238,9 @@ void RestartTheGame()
     PrintToChatAll("%sThe game has been restarted!", CHAT_PREFIX);
 }
 
-void AllowMapEnd(bool:can_end)
+void SetMapCanEnd(bool endable)
 {
-    if (fof_sv_dm_timer_ends_map != INVALID_HANDLE)
-    {
-        SetConVarBool(fof_sv_dm_timer_ends_map, can_end, false, false);
-    }
+    g_TimerEndsMapCvar.SetBool(endable, false, false);
 }
 
 int LeaderCheck(bool:canShowMessage = true)
@@ -1315,16 +1309,12 @@ bool SetGameDescription(String:description[])
 #endif
 }
 
-stock WriteLog(const String:format[], any:...)
+stock void WriteLog(const char[] format, any ...)
 {
 #if defined DEBUG
-    if (g_LogFilePath[0] != '\0' && format[0] != '\0')
-    {
-        decl String:buffer[2048];
-        VFormat(buffer, sizeof(buffer), format, 2);
-        LogToFileEx(g_LogFilePath, "[%.3f] %s", GetGameTime(), buffer);
-        //PrintToServer("[%.3f] %s", GetGameTime(), buffer);
-    }
+    char buf[2048];
+    VFormat(buf, sizeof(buf), format, 2);
+    PrintToServer("[GG - %.3f] %s", GetGameTime(), buf);
 #endif
 }
 
@@ -1338,7 +1328,7 @@ float FloatMax(Float:value1, Float:value2)
     return FloatCompare(value1, value2) >= 0 ? value1 : value2;
 }
 
-Action Command_DumpScores(caller, args)
+Action Command_Dump(caller, args)
 {
     PrintToConsole(caller, "---------------------------------");
     PrintToConsole(caller, "Leader: %d", g_LeadingClient);
@@ -1357,4 +1347,30 @@ Action Command_DumpScores(caller, args)
     }
     PrintToConsole(caller, "---------------------------------");
     return Plugin_Handled;
+}
+
+//TODO
+stock bool IsEnabled()
+{
+    return g_EnabledCvar.BoolValue;
+}
+
+bool FistsEnabled()
+{
+    return g_FistsEnabledCvar.BoolValue;
+}
+
+int HealAmount()
+{
+    return Int32Max(0, g_HealAmoundCvar.IntValue);
+}
+
+bool DrunknessEnabled()
+{
+    return g_DrunknessEnabledCvar.BoolValue;
+}
+
+bool SuicidesEnabled()
+{
+    return g_SuicidesEnabledCvar.BoolValue;
 }
