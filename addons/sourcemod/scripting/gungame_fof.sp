@@ -16,7 +16,7 @@
 #undef REQUIRE_EXTENSIONS
 #tryinclude <steamworks>
 
-#define PLUGIN_VERSION "1.10.0"
+#define PLUGIN_VERSION "1.10.1pre"
 #define PLUGIN_NAME "[FoF] Gun Game"
 #define CHAT_PREFIX "\x04 GG \x07FFDA00 "
 #define CONSOLE_PREFIX "[GunGame] "
