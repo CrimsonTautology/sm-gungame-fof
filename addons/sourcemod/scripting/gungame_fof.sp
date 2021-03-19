@@ -21,10 +21,6 @@
 #define CHAT_PREFIX "\x04 GG \x07FFDA00 "
 #define CONSOLE_PREFIX "[GunGame] "
 
-#if !defined IN_FOF_SWITCH
-#define IN_FOF_SWITCH   (1<<14)
-#endif
-
 #define GAME_DESCRIPTION "Gun Game"
 #define SOUND_LEVELUP "music/bounty/bounty_objective_stinger1.mp3"
 #define SOUND_FINAL "music/bounty/bounty_objective_stinger2.mp3"
