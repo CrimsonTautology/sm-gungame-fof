@@ -154,7 +154,9 @@ public OnClientDisconnect_Post(client)
 
     new timeleft;
     if (GetMapTimeLeft(timeleft) && timeleft > 0 && g_WinningClient <= 0)
+    {
         LeaderCheck();
+    }
 
     g_ClientLevel[client] = 0;
 }
@@ -246,22 +248,23 @@ void ReloadConfigFile()
     IntToString(g_MaxLevel, nextlevel, sizeof(nextlevel));
 
     if (g_WeaponsTable != INVALID_HANDLE)
+    {
         CloseHandle(g_WeaponsTable);
+    }
     g_WeaponsTable = CreateKeyValues("gungame_weapons");
     if (FileToKeyValues(g_WeaponsTable, file))
     {
         new String:levelName[16], level, String:playerWeapon[2][32];
         if (KvGotoFirstSubKey(g_WeaponsTable))
+        {
             do
             {
                 KvGetSectionName(g_WeaponsTable, levelName, sizeof(levelName));
 
-                if (!IsCharNumeric(levelName[0]))
-                    continue;
+                if (!IsCharNumeric(levelName[0])) continue;
 
                 level = StringToInt(levelName);
-                if (g_MaxLevel < level)
-                    g_MaxLevel = level;
+                if (g_MaxLevel < level) g_MaxLevel = level;
 
                 if (KvGotoFirstSubKey(g_WeaponsTable, false))
                 {
@@ -270,8 +273,8 @@ void ReloadConfigFile()
                     KvGetString(g_WeaponsTable, playerWeapon[0], playerWeapon[1], sizeof(playerWeapon[]));
                 }
                 PrintToServer("%sLevel %d = %s%s%s", CONSOLE_PREFIX, g_MaxLevel, playerWeapon[0], playerWeapon[1][0] != '\0' ? ", " : "", playerWeapon[1]);
-            }
-            while (KvGotoNextKey(g_WeaponsTable));
+            } while (KvGotoNextKey(g_WeaponsTable));
+        }
         PrintToServer("%sTop level - %d", CONSOLE_PREFIX, g_MaxLevel);
     }
     else
@@ -366,7 +369,9 @@ void Event_PlayerDeath(Handle:event, const String:eventname[], bool:dontBroadcas
     if (g_WinningClient > 0)
     {
         if (0 < victim <= MaxClients && IsClientInGame(victim))
+        {
             EmitSoundToClient(victim, SOUND_HUMILIATION);
+        }
         return;
     }
 
@@ -385,11 +390,15 @@ void Event_PlayerDeath(Handle:event, const String:eventname[], bool:dontBroadcas
     }
 
     if (!(0 < killer <= MaxClients && IsClientInGame(victim) && IsClientInGame(killer)))
+    {
         return;
+    }
 
     new Float:timestamp = GetGameTime();
     if ((timestamp - g_LastKill[killer]) < 0.01 || (timestamp - g_LastLevelUP[killer]) <= 0.0)
+    {
         return;
+    }
     g_LastKill[killer] = timestamp;
 
     new String:weapon_name[32];
@@ -410,27 +419,47 @@ void Event_PlayerDeath(Handle:event, const String:eventname[], bool:dontBroadcas
     }
 
     if (StrEqual(weapon_name, "arrow"))
+    {
         strcopy(weapon_name, sizeof(weapon_name), "weapon_bow");
+    }
     else if (StrEqual(weapon_name, "thrown_axe"))
+    {
         strcopy(weapon_name, sizeof(weapon_name), "weapon_axe");
+    }
     else if (StrEqual(weapon_name, "thrown_knife"))
+    {
         strcopy(weapon_name, sizeof(weapon_name), "weapon_knife");
+    }
     else if (StrEqual(weapon_name, "thrown_machete"))
+    {
         strcopy(weapon_name, sizeof(weapon_name), "weapon_machete");
+    }
     else if (StrEqual(weapon_name, "rpg_missile"))
+    {
         strcopy(weapon_name, sizeof(weapon_name), "weapon_rpg");
+    }
     else if (StrEqual(weapon_name, "crossbow_bolt"))
+    {
         strcopy(weapon_name, sizeof(weapon_name), "weapon_crossbow");
+    }
     else if (StrEqual(weapon_name, "grenade_ar2"))
+    {
         strcopy(weapon_name, sizeof(weapon_name), "weapon_ar2");
+    }
     else if (StrEqual(weapon_name, "weapon_ar2"))
+    {
         strcopy(weapon_name, sizeof(weapon_name), "weapon_ar2");
+    }
     else if (StrEqual(weapon_name, "blast"))
+    {
         strcopy(weapon_name, sizeof(weapon_name), g_LastWeaponFired[killer]);
+    }
     else
     {
         if (weapon_name[strlen(weapon_name)-1] == '2')
+        {
             weapon_name[strlen(weapon_name)-1] = '\0';
+        }
         Format(weapon_name, sizeof(weapon_name), "weapon_%s", weapon_name);
     }
 
@@ -457,7 +486,9 @@ void Event_PlayerDeath(Handle:event, const String:eventname[], bool:dontBroadcas
         //return;
     }
     else if (!IsFakeClient(killer) && !StrEqual(weapon_name, allowedWeapon[0]) && !StrEqual(weapon_name, allowedWeapon[1]))
+    {
         return;
+    }
 
     g_LastLevelUP[killer] = timestamp + g_EquipDelay;
     g_ClientLevel[killer]++;
@@ -477,12 +508,18 @@ void Event_PlayerDeath(Handle:event, const String:eventname[], bool:dontBroadcas
                 mins++;
             }
             if (duration > 0.0)
+            {
                 FormatEx(durationString, sizeof(durationString), "%d min. %.1f sec.", mins, duration); // TODO wow this is wrong
+            }
             else
+            {
                 FormatEx(durationString, sizeof(durationString), "%d min.", mins);
+            }
         }
         else
+        {
             FormatEx(durationString, sizeof(durationString), " %.1f sec.", duration);
+        }
 
         PrintCenterTextAll("%N has won the round!", killer);
         PrintToChatAll("%sPlayer \x03%N\x07FFDA00 has won the round in \x03%s", CHAT_PREFIX, killer, durationString);
@@ -497,7 +534,9 @@ void Event_PlayerDeath(Handle:event, const String:eventname[], bool:dontBroadcas
                 g_StartTime[i] = 0.0;
             }
             if (IsClientInGame(i))
+            {
                 CreateTimer(0.0, Timer_UpdateEquipment, GetClientUserId(i), TIMER_FLAG_NO_MAPCHANGE);
+            }
         }
 
         CreateTimer(3.0, Timer_RespawnAnnounce, .flags = TIMER_FLAG_NO_MAPCHANGE);
@@ -523,7 +562,9 @@ void Event_PlayerDeath(Handle:event, const String:eventname[], bool:dontBroadcas
     if (IsPlayerAlive(killer))
     {
         if (g_HealAmount != 0)
+        {
             SetEntityHealth(killer, GetClientHealth(killer) + g_HealAmount);
+        }
         CreateTimer(0.01, Timer_GetDrunk, killerUID, TIMER_FLAG_NO_MAPCHANGE);
     }
 
@@ -534,7 +575,9 @@ Action Timer_GetDrunk(Handle:timer, any:userid)
 {
     new client = GetClientOfUserId(userid);
     if (g_DrunknessAmount != 0.0 && 0 < client <= MaxClients && IsClientInGame(client) && IsPlayerAlive(client))
+    {
         SetEntPropFloat(client, Prop_Send, "m_flDrunkness", FloatMax(0.0, GetEntPropFloat(client, Prop_Send, "m_flDrunkness") + g_DrunknessAmount));
+    }
     return Plugin_Stop;
 }
 
@@ -615,11 +658,14 @@ void Hook_WeaponSwitchPost(client, weapon)
         weapon_ent[1] = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon2");
 
         for (new String:class[32], i, w = 0; w < sizeof(weapon_ent); w++)
+        {
             if (weapon_ent[w] > MaxClients && IsValidEdict(weapon_ent[w]))
             {
                 GetEntityClassname(weapon_ent[w], class, sizeof(class));
                 if (class[strlen(class)-1] == '2')
+                {
                     class[strlen(class)-1] = '\0';
+                }
                 if (StrContains(class, "weapon_") != 0)
                 {
                     WriteLog("Hook_WeaponSwitchPost(%d): incorrect weapon '%s' (%s/%d)", client, class, w == 0 ? "m_hActiveWeapon" : "m_hActiveWeapon2", weapon_ent[w]);
@@ -627,7 +673,9 @@ void Hook_WeaponSwitchPost(client, weapon)
                 }
 
                 if ((i = FindStringInArray(AllowedWeapons, class)) >= 0)
+                {
                     RemoveFromArray(AllowedWeapons, i);
+                }
                 else
                 {
                     WriteLog("Hook_WeaponSwitchPost(%d): unacceptable '%s' (%s/%d)", client, class, w == 0 ? "m_hActiveWeapon" : "m_hActiveWeapon2", weapon_ent[w]);
@@ -638,6 +686,7 @@ void Hook_WeaponSwitchPost(client, weapon)
                     UseWeapon(client, "weapon_fists");
                 }
             }
+        }
 
         CloseHandle(AllowedWeapons);
         WriteLog("Hook_WeaponSwitchPost(%d): end", client);
@@ -665,7 +714,9 @@ Action Timer_RespawnAnnounce(Handle:timer, any:userid)
     CreateTimer(g_BonusRoundTime, Timer_RespawnPlayers, .flags = TIMER_FLAG_NO_MAPCHANGE);
     CreateTimer(FloatMax(0.0, (g_BonusRoundTime - 1.0)), Timer_AllowMapEnd, .flags = TIMER_FLAG_NO_MAPCHANGE);
     if (g_BonusRoundTime >= 1.0)
+    {
         PrintToChatAll("%sStarting new round in %d seconds...", CHAT_PREFIX, RoundToCeil(g_BonusRoundTime));
+    }
     return Plugin_Stop;
 }
 
@@ -701,14 +752,20 @@ Action Timer_RespawnPlayers(Handle:timer)
     CreateTimer(0.05, Timer_RespawnPlayers_Fix, .flags = TIMER_FLAG_NO_MAPCHANGE);
 
     if (GetCommandFlags("round_restart") != INVALID_FCVAR_FLAGS)
+    {
         ServerCommand("round_restart");
+    }
 
     new ent = INVALID_ENT_REFERENCE;
     while ((ent = FindEntityByClassname(ent, "weapon_*")) != INVALID_ENT_REFERENCE)
+    {
         AcceptEntityInput(ent, "Kill");
+    }
     ent = INVALID_ENT_REFERENCE;
     while ((ent = FindEntityByClassname(ent, "dynamite*")) != INVALID_ENT_REFERENCE)
+    {
         AcceptEntityInput(ent, "Kill");
+    }
 
     for (new client = 1; client <= MaxClients; client++)
     {
@@ -731,17 +788,25 @@ Action Timer_RespawnPlayers_Fix(Handle:timer)
         if (IsClientInGame(i))
         {
             if (g_WasInGame[i] && GetClientTeam(i) == 1)
+            {
                 FakeClientCommand(i, "autojoin");
+            }
             else if (g_WasInGame[i] && !IsPlayerAlive(i))
+            {
                 PrintToServer("%sPlayer %L is still dead!", CONSOLE_PREFIX, i);
+            }
             else if (g_UpdateEquipment[i])
+            {
                 Timer_UpdateEquipment(INVALID_HANDLE, GetClientUserId(i));
+            }
         }
     }
 
     new timeleft;
     if (GetMapTimeLeft(timeleft) && timeleft > 0)
+    {
         EmitSoundToAll(g_RoundStartSounds[GetRandomInt(0, sizeof(g_RoundStartSounds) - 1)]);
+    }
 
     return Plugin_Stop;
 }
@@ -750,12 +815,16 @@ Action Timer_UpdateEquipment(Handle:timer, any:userid)
 {
     new client = GetClientOfUserId(userid);
     if (!(0 < client <= MaxClients && IsClientInGame(client) && IsPlayerAlive(client)))
+    {
         return Plugin_Stop;
+    }
 
     g_UpdateEquipment[client] = false;
 
     if (g_WinningClient == client)
+    {
         SetEntityHealth(client, 500);
+    }
     else
     {
         UseWeapon(client, "weapon_fists");
@@ -770,7 +839,9 @@ Action Timer_UpdateEquipment(Handle:timer, any:userid)
     {
         new String:playerLevel[16];
         if (g_WinningClient > 0 && client == g_WinningClient)
+        {
             strcopy(playerLevel, sizeof(playerLevel), "winner");
+        }
         else
             IntToString(g_ClientLevel[client], playerLevel, sizeof(playerLevel));
 
@@ -783,7 +854,9 @@ Action Timer_UpdateEquipment(Handle:timer, any:userid)
             KvGetString(g_WeaponsTable, playerWeapon[0], playerWeapon[1], sizeof(playerWeapon[]));
             KvGoBack(g_WeaponsTable);
             if (StrEqual(playerWeapon[0], playerWeapon[1]))
+            {
                 Format(playerWeapon[1], sizeof(playerWeapon[]), "%s2", playerWeapon[0]);
+            }
         }
 
         if (playerWeapon[0][0] == '\0' && playerWeapon[1][0] == '\0')
@@ -826,12 +899,16 @@ Action Timer_GiveWeapon(Handle:timer, Handle:pack)
     //g_Timer_GiveWeapon2[client] = INVALID_HANDLE;
 
     if (!(0 < client <= MaxClients && IsClientInGame(client) && IsPlayerAlive(client)))
+    {
         return Plugin_Stop;
+    }
 
     new String:weapon_name[32];
     ReadPackString(pack, weapon_name, sizeof(weapon_name));
     if (weapon_name[0] == '\0')
+    {
         return Plugin_Stop;
+    }
 
     WriteLog("Timer_GiveWeapon(%d): %L", client, client);
 
@@ -841,11 +918,17 @@ Action Timer_GiveWeapon(Handle:timer, Handle:pack)
         WriteLog("Timer_GiveWeapon(%d): generated %s/%d", client, weapon_name, weapon);
 
         if (StrContains(weapon_name, "weapon_dynamite") == 0)
+        {
             SetAmmo(client, weapon, 100);
+        }
         else if (StrEqual(weapon_name, "weapon_knife"))
+        {
             SetAmmo(client, weapon, 2);
+        }
         else if (StrEqual(weapon_name, "weapon_axe") || StrEqual(weapon_name, "weapon_machete"))
+        {
             SetAmmo(client, weapon, 1);
+        }
 
         new Handle:pack1;
         CreateDataTimer(0.1, Timer_UseWeapon, pack1, TIMER_FLAG_NO_MAPCHANGE|TIMER_DATA_HNDL_CLOSE);
@@ -868,12 +951,16 @@ Action Timer_UseWeapon(Handle:timer, Handle:pack)
 
     new client = GetClientOfUserId(ReadPackCell(pack));
     if (!(0 < client <= MaxClients && IsClientInGame(client) && IsPlayerAlive(client)))
+    {
         return Plugin_Stop;
+    }
 
     new String:weapon_name[32];
     ReadPackString(pack, weapon_name, sizeof(weapon_name));
     if (weapon_name[0] == '\0')
+    {
         return Plugin_Stop;
+    }
 
     UseWeapon(client, weapon_name);
     return Plugin_Stop;
@@ -895,15 +982,24 @@ Action Timer_Repeat(Handle:timer)
     if (g_WinningClient <= 0)
     {
         for (new i = 1; i <= MaxClients; i++)
+        {
             if (IsClientInGame(i) && g_ClientLevel[i] > topLevel)
+            {
                 topLevel = g_ClientLevel[i];
+            }
+        }
 
         for (new i = 1; i <= MaxClients; i++)
+        {
             if (IsClientInGame(i) && g_ClientLevel[i] >= topLevel && GetClientTeam(i) != 1)
+            {
                 clients[numClients++] = i;
+            }
+        }
     }
 
     for (new i = 1; i <= MaxClients; i++)
+    {
         if (IsClientInGame(i))
         {
             ClearSyncHud(i, g_HUDSync1);
@@ -954,8 +1050,7 @@ Action Timer_Repeat(Handle:timer)
                     _ShowHudText(i, g_HUDSync1, "LEADER: %d LVL", topLevel);
                 }
 
-                if (GetClientTeam(i) == 1)
-                    continue;
+                if (GetClientTeam(i) == 1) continue;
 
                 if (g_ClientLevel[i] >= g_MaxLevel)
                 {
@@ -969,6 +1064,7 @@ Action Timer_Repeat(Handle:timer)
                 }
             }
         }
+    }
     return Plugin_Handled;
 }
 
@@ -976,7 +1072,9 @@ Action Timer_Announce(Handle:timer, any:userid)
 {
     new client = GetClientOfUserId(userid);
     if (0 < client <= MaxClients && IsClientInGame(client))
+    {
         PrintToChat(client, "\x07FF0000WARNING:\x07FFDA00 This is an unofficial game mode made by \x03XPenia Team\x07FFDA00.");
+    }
     return Plugin_Stop;
 }
 
@@ -1011,11 +1109,10 @@ void UseWeapon(client, const String:item[])
             {
                 new bool:wasFound = false;
                 for (new weapon, String:class[32], s = 0; s < 48; s++)
+                {
                     if (IsValidEdict((weapon = GetEntPropEnt(client, Prop_Send, "m_hMyWeapons", s))))
                     {
                         GetEntityClassname(weapon, class, sizeof(class));
-                        //if (class[strlen(class)-1] == '2')
-                        //  class[strlen(class)-1] = '\0';
                         if (StrEqual(class, item))
                         {
                             //EquipPlayerWeapon(client, weapon);
@@ -1023,6 +1120,7 @@ void UseWeapon(client, const String:item[])
                             break;
                         }
                     }
+                }
                 if (wasFound)
                 {
                     WriteLog("UseWeapon(%d): use %s", client, item);
@@ -1058,16 +1156,19 @@ Action Timer_SetAmmo(Handle:timer, Handle:pack)
 {
     ResetPack(pack);
 
-    if (g_AmmoOffset <= 0)
-        return Plugin_Stop;
+    if (g_AmmoOffset <= 0) return Plugin_Stop;
 
     new client = GetClientOfUserId(ReadPackCell(pack));
     if (!(0 < client <= MaxClients && IsClientInGame(client) && IsPlayerAlive(client)))
+    {
         return Plugin_Stop;
+    }
 
     new weapon = EntRefToEntIndex(ReadPackCell(pack));
     if (weapon <= MaxClients || !IsValidEdict(weapon))
+    {
         return Plugin_Stop;
+    }
 
     SetEntData(client, g_AmmoOffset + GetEntProp(weapon, Prop_Send, "m_iPrimaryAmmoType") * 4, ReadPackCell(pack));
     return Plugin_Stop;
@@ -1094,19 +1195,25 @@ void StripWeapons(client)
             if (IsValidEdict((weapon = GetEntPropEnt(client, Prop_Send, "m_hMyWeapons", s))))
             {
                 for (new w = 0; w < sizeof(weapons); w++)
+                {
                     if (weapons[w] == weapon)
                     {
                         wasFound = true;
                         WriteLog("StripWeapons(%d): found duplicate '%s' (slot:%d,entity:%d)", client, class, s, weapon);
                     }
-                if (wasFound)
-                    continue;
+                }
+
+                if (wasFound) continue;
+
                 for (new w = 0; w < sizeof(weapons); w++)
+                {
                     if (weapons[w] <= MaxClients)
                     {
                         weapons[w] = weapon;
                         break;
                     }
+                }
+
                 GetEntityClassname(weapon, class, sizeof(class));
                 if (g_AllowFists && StrEqual(class, "weapon_fists"))
                 {
@@ -1176,7 +1283,9 @@ int LeaderCheck(bool:canShowMessage = true)
             {
                 EmitSoundToClient(i, SOUND_TIEDLEAD, .flags = SND_CHANGEPITCH, .pitch = 115);
                 if (canShowMessage)
+                {
                     PrintToConsoleAll("%s'%N' is also in the lead (level %d)", CONSOLE_PREFIX, i, g_ClientLevel[i]);
+                }
             }
             else if (g_IsInTheLead[i] && oldLeader != g_LeadingClient && g_LeadingClient == i)
             {
@@ -1188,7 +1297,9 @@ int LeaderCheck(bool:canShowMessage = true)
                 }
             }
             else if (!g_IsInTheLead[i] && g_WasInTheLead[i])
+            {
                 EmitSoundToClient(i, SOUND_LOSTLEAD);
+            }
         }
     }
 
@@ -1235,8 +1346,7 @@ Action Command_DumpScores(caller, args)
     PrintToConsole(caller, "level notoriety frags deaths user");
     for (new client=1; client <= MaxClients; client++)
     {
-        if (!IsClientInGame(client) || IsFakeClient(client))
-            continue;
+        if (!IsClientInGame(client) || IsFakeClient(client)) continue;
 
         PrintToConsole(caller, "%5d %9d %5d %6d %L",
                 g_ClientLevel[client],
