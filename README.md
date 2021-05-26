@@ -18,7 +18,7 @@ Make sure your server has SourceMod installed.  See [Installing SourceMod](https
 
 Download the latest [release](https://github.com/CrimsonTautology/sm-gungame-fof/releases/latest) and copy the contents of `addons` to your server's `addons` directory. 
 
-SteamWorks extension is also required for the server to run correctly. Get the latest build for either windows or linux here: https://users.alliedmods.net/~kyles/builds/SteamWorks/. Again, copy the contents of `addons` to youyr servers `addons` directory. 
+SteamWorks extension is also required for the server to run correctly. Get the latest build for either windows or linux here: https://users.alliedmods.net/~kyles/builds/SteamWorks/. Again, copy the contents of `addons` to your servers `addons` directory. 
 
 It is recommended to restart your server after installing.
 
